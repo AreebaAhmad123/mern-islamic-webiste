@@ -7,161 +7,230 @@ import getDay from "../common/date";
 import BlogInteraction from "../components/blog-interaction.component";
 import BlogPostCard from "../components/blog-post.component";
 import BlogContent from "../components/blog-content.component";
+import CommentsContainer from "../components/comments.component";
+import SimilarBlogs from "../components/similar-blogs.component";
+import { UserContext } from "../App";
+import { lookInSession } from "../common/session";
+import Sidebar from "../components/sidebar.component";
+import { FiEye, FiMessageCircle, FiTag } from "react-icons/fi";
+
 export const BlogContext = createContext({});
 
 export const blogStructure = {
     title: "",
     des: "",
     content: [],
-
     author: { personal_info: {} },
     banner: "",
     publishedAt: "",
+    comments: { results: [] },
+    activity: { total_parent_comments: 0 }
 };
-
 
 const BlogPage = () => {
     const { blog_id } = useParams();
-
     const [blog, setBlog] = useState(blogStructure);
-    const [similarBlogs, setSimilarBlogs] = useState(null); // Fixed variable name
+    const [similarBlogs, setSimilarBlogs] = useState(null);
     const [loading, setLoading] = useState(true);
     const [isLikedByUser, setLikedByUser] = useState(false);
+    const [commentsWrapper, setCommentsWrapper] = useState(true);
+    const [totalParentCommentsLoaded, setTotalParentCommentsLoaded] = useState(0);
 
-    const {
-        title,
-        content,
-        banner,
-        author: {
-            personal_info: { fullname, username: author_username, profile_img },
-        },
-        publishedAt,
-    } = blog;
-    useEffect(() => {
-        const loadBlogData = async () => {
-            try {
-                const { data } = await axios.get(`${import.meta.env.VITE_SERVER_DOMAIN}/blog/${blog_id}`);
-                setBlog(data.blog);
-    
-                // Check if user already liked this blog
-                if (data.likedByUser) {
-                    setLikedByUser(true);
-                }
-            } catch (err) {
-                console.error("Error loading blog:", err);
+    const fetchComments = async ({ blog_id, setParentCommentCountFun }) => {
+        try {
+            console.log('Fetching comments for blog:', blog_id);
+            if (!blog_id) {
+                console.error('Blog ID is missing');
+                return { results: [] };
             }
-        };
-    
-        loadBlogData();
-    }, [blog_id]);
 
-    const fetchBlog = () => {
-        axios
-            .post(import.meta.env.VITE_SERVER_DOMAIN + "/get-blog", { blog_id })
-            .then(({ data: { blog } }) => {
+            const { data } = await axios.post(
+                import.meta.env.VITE_SERVER_DOMAIN + "/get-blog-comments",
+                { blog_id }
+            );
+
+            console.log('Comments response:', data);
+
+            if (data.comments) {
+                setParentCommentCountFun(data.comments.length);
+                return { results: data.comments };
+            }
+            return { results: [] };
+        } catch (err) {
+            console.error("Error fetching comments:", err);
+            if (err.response) {
+                console.error("Error details:", err.response.data);
+            }
+            return { results: [] };
+        }
+    };
+
+    const fetchBlog = async () => {
+        try {
+            // Get access token from session
+            let access_token = null;
+            try {
+                const userAuth = JSON.parse(lookInSession("user") || "{}");
+                access_token = userAuth.access_token;
+                console.log("Retrieved access token:", access_token ? "Token exists" : "No token");
+            } catch (err) {
+                console.error("Error parsing session data:", err);
+            }
+
+            const headers = access_token ? {
+                'Authorization': `Bearer ${access_token}`,
+                'Content-Type': 'application/json'
+            } : {
+                'Content-Type': 'application/json'
+            };
+
+            console.log("Making request with headers:", headers);
+
+            const { data: { blog, likedByUser } } = await axios.post(
+                import.meta.env.VITE_SERVER_DOMAIN + "/get-blog",
+                { blog_id },
+                { headers }
+            );
+
+            console.log("Received blog data:", blog);
+            setBlog(blog);
+            setLikedByUser(likedByUser);
+
+            if (blog && blog._id) {
+                console.log('Fetching comments for blog ID:', blog._id);
+                const comments = await fetchComments({
+                    blog_id: blog._id,
+                    setParentCommentCountFun: setTotalParentCommentsLoaded
+                });
+                blog.comments = comments;
                 setBlog(blog);
-                axios
-                    .post(import.meta.env.VITE_SERVER_DOMAIN + "/search-blogs", {
+            }
+
+            // Fetch similar blogs
+            if (blog.tags && blog.tags.length > 0) {
+                const { data } = await axios.post(
+                    import.meta.env.VITE_SERVER_DOMAIN + "/search-blogs",
+                    {
                         tag: blog.tags[0],
                         limit: 6,
                         eleminate_blog: blog_id,
-                    })
-                    .then(({ data }) => {
-                        setSimilarBlogs(data.blogs);
-                    })
-                    .catch(err => {
-                        console.error("Error fetching similar blogs:", err);
-                        setSimilarBlogs([]); // Set to empty array instead of null if error occurs
-                    });
-
-                setLoading(false);
-            })
-            .catch((err) => {
-                console.error(err);
-                setLoading(false);
-            });
+                    },
+                    { headers }
+                );
+                setSimilarBlogs(data.blogs);
+            }
+        } catch (err) {
+            console.error("Error fetching blog:", err);
+            if (err.response) {
+                console.error("Error details:", err.response.data);
+                console.error("Error status:", err.response.status);
+                console.error("Error headers:", err.response.headers);
+            }
+            setBlog(null);
+        } finally {
+            setLoading(false);
+        }
     };
 
     useEffect(() => {
-        resetStates();
-        fetchBlog();
-    }, [blog_id]);
-
-    const resetStates = () => {
         setBlog(blogStructure);
         setSimilarBlogs(null);
-        setLoading(true); // Should be true when resetting
-    };
+        setLoading(true);
+        fetchBlog();
+        setLikedByUser(false);
+        setCommentsWrapper(false);
+        setTotalParentCommentsLoaded(0);
+    }, [blog_id]);
+
+    if (loading) {
+        return <Loader />;
+    }
+
+    if (!blog) {
+        return <div className="max-w-[900px] center py-10">Blog not found</div>;
+    }
+
+    // Safe destructuring with null checks
+    const {
+        title = "",
+        content = [],
+        banner = "",
+        author = { personal_info: {} },
+        publishedAt = "",
+    } = blog;
+
+    const {
+        personal_info: { fullname = "", username: author_username = "", profile_img = "" } = {}
+    } = author;
+
+    // Check if content exists and has blocks
+    const hasContent = content && content.length > 0 && content[0] && content[0].blocks;
 
     return (
         <AnimationWrapper>
-            {loading ? (
-                <Loader />
-            ) : (
-                <BlogContext.Provider value={{ blog, setBlog, isLikedByUser, setLikedByUser }}>
-                    <div className="max-w-[900px] center py-10 max-lg:px-[5vw]">
-                        <img src={banner} alt="Blog Banner" className="aspect-video" />
-
-                        <div className="mt-12">
-                            <h2>{title}</h2>
-
-                            <div className="flex max-sm:flex-col justify-between my-8">
-                                <div className="flex gap-5 items-start">
-                                    <img
-                                        src={profile_img}
-                                        alt="Author"
-                                        className="w-12 h-12 rounded-full"
-                                    />
-                                    <p className="capitalize">
-                                        {fullname}
-                                        <br />
-                                        <Link
-                                            to={`/user/${author_username}`}
-                                            className="underline"
-                                        >
-                                            @{author_username}
-                                        </Link>
-                                    </p>
-                                </div>
-
-                                <div>
-                                    <p className="text-dark-grey opacity-75 max-sm:mt-6 max-sm:ml-12 max-sm:pl-5">
-                                        Published on {getDay(publishedAt)}
-                                    </p>
-                                </div>
+            <BlogContext.Provider value={{ 
+                blog, 
+                setBlog, 
+                isLikedByUser, 
+                setLikedByUser, 
+                commentsWrapper, 
+                setCommentsWrapper, 
+                totalParentCommentsLoaded, 
+                setTotalParentCommentsLoaded 
+            }}>
+                <div className="flex flex-row gap-8 max-w-6xl mx-auto py-10 max-lg:px-[5vw] items-start">
+                    {/* Main Content */}
+                    <div className="flex-1 min-w-0">
+                        {/* Title */}
+                        <h1 className="text-3xl md:text-4xl font-bold mb-4 leading-tight">{title}</h1>
+                        {/* Meta Row */}
+                        <div className="flex flex-wrap items-center gap-4 text-gray-500 text-sm mb-6">
+                            <div className="flex items-center gap-2">
+                                <img src={profile_img} alt="Author" className="w-10 h-10 rounded-full object-cover" />
+                                <span className="font-medium text-gray-800">{fullname}</span>
+                                <span className="text-gray-400">@{author_username}</span>
                             </div>
+                            <span className="hidden sm:block">•</span>
+                            <span>Published on {getDay(publishedAt)}</span>
+                            <span className="hidden sm:block">•</span>
+                            <span className="flex items-center gap-1"><FiEye className="inline-block" /> {blog.views || 0} Views</span>
+                            <span className="flex items-center gap-1"><FiMessageCircle className="inline-block" /> {blog.activity?.total_parent_comments || 0} Comments</span>
+                            {blog.tags && blog.tags.length > 0 && (
+                                <span className="flex items-center gap-1"><FiTag className="inline-block" /> {blog.tags[0]}</span>
+                            )}
                         </div>
-
-                        <BlogInteraction />
-                        <div className="my-12 font-geliasio blog-page-content">
-                            {content[0].blocks.map((block, i) => (
+                        {/* Main Image */}
+                        <img src={banner} alt="Blog Banner" className="aspect-video rounded-xl w-full object-cover mb-8" />
+                        {/* Blog Content */}
+                        <div className="my-8 font-geliasio blog-page-content text-base md:text-lg leading-relaxed">
+                            {hasContent ? content[0].blocks.map((block, i) => (
                                 <div key={i} className="my-4 md:my-8">
                                     <BlogContent block={block} />
                                 </div>
-                            ))}
+                            )) : (
+                                <div className="text-gray-500 italic">No content available</div>
+                            )}
                         </div>
-
-                        <BlogInteraction />
-
-                        {similarBlogs && similarBlogs.length ? (
-                            <>
-                                <h1 className="text-2xl mt-14 mb-10 font-medium">Similar Blogs</h1>
-                                {similarBlogs.map((blog, i) => {
-                                    let { author: { personal_info } } = blog;
-
-                                    return (
-                                        <AnimationWrapper key={i} transition={{ duration: 1, delay: i * 0.1 }}>
-                                            <BlogPostCard content={blog} author={personal_info} />
-                                        </AnimationWrapper>
-                                    );
-                                })}
-                            </>
-                        ) : null}
-
+                        {/* Related Posts Section */}
+                        <SimilarBlogs currentBlogId={blog_id} tags={blog.tags || []} />
                         <BlogInteraction />
                     </div>
-                </BlogContext.Provider>
-            )}
+                    {/* Sidebar */}
+                    <div className="hidden lg:flex flex-col w-80 flex-shrink-0 gap-6">
+                        <Sidebar
+                            author={{
+                                fullname,
+                                profile_img,
+                                postCount: blog.author?.postCount,
+                            }}
+                            tags={blog.tags || []}
+                            topPosts={similarBlogs || []}
+                        />
+                    </div>
+                </div>
+                {/* Comments section full width below main content/sidebar */}
+                <CommentsContainer />
+            </BlogContext.Provider>
         </AnimationWrapper>
     );
 };

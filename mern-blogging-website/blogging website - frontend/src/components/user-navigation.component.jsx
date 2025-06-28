@@ -1,12 +1,12 @@
 import AnimationWrapper from "../common/page-animation";
 import { Link } from "react-router-dom";
-import {userContext} from '../App';
+import {UserContext} from '../App';
 import { useContext } from "react";
 import { removeFromSession } from "../common/session"; 
 
 
 const UserNavigationPanel = () => {
-    const { userAuth: { username }, setUserAuth } = useContext(userContext);
+    const { userAuth: { username }, setUserAuth } = useContext(UserContext);
     const signOutUser = () => {
         removeFromSession("user");
         setUserAuth({ access_token: null });
@@ -24,6 +24,10 @@ const UserNavigationPanel = () => {
 
                 <Link to="/dashboard/blogs" className="link pl-8 py-4">
                     Dashboard
+                </Link>
+
+                <Link to="/dashboard/notification" className="link pl-8 py-4">
+                    Notifications
                 </Link>
 
                 <Link to="/settings/edit-profile" className="link pl-8 py-4">

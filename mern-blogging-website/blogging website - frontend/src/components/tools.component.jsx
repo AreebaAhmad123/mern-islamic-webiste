@@ -5,23 +5,67 @@ import Header from "@editorjs/header";
 import Quote from "@editorjs/quote";
 import Marker from "@editorjs/marker";
 import InlineCode from "@editorjs/inline-code";
+import axios from "axios";
+import { lookInSession } from "../common/session";
 
-const uploadImageByFile = (event) => {
-    return new Promise((resolve, reject) => {
-        const file = event;
-        try {
-            const url = URL.createObjectURL(file);
-            resolve({
-                success: 1,
-                file: { url }
-            });
-        } catch (error) {
-            reject({
-                success: 0,
-                message: "Image upload failed"
-            });
+const uploadImageByFile = async (file) => {
+    try {
+        // Validate file type
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+        if (!allowedTypes.includes(file.type)) {
+            throw new Error("Only JPG, JPEG, and PNG files are allowed");
         }
-    });
+
+        // Validate file size (max 2MB)
+        const maxSize = 2 * 1024 * 1024; // 2MB
+        if (file.size > maxSize) {
+            throw new Error("Image size must be less than 2MB");
+        }
+
+        // Convert file to base64
+        const base64 = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+
+        const userAuth = JSON.parse(lookInSession("user") || "{}");
+        const access_token = userAuth.access_token;
+
+        if (!access_token) {
+            throw new Error("Authentication required");
+        }
+
+        const response = await axios.post(
+            `${import.meta.env.VITE_SERVER_DOMAIN}/upload-image`,
+            { image: base64 },
+            {
+                headers: {
+                    'Authorization': `Bearer ${access_token}`,
+                    'Content-Type': 'application/json'
+                },
+                timeout: 90000 // 90 second timeout for image upload (increased from 30s)
+            }
+        );
+
+        if (response.data.success === true) {
+            return {
+                success: 1,
+                file: {
+                    url: response.data.url
+                }
+            };
+        } else {
+            throw new Error("Upload failed");
+        }
+    } catch (error) {
+        console.error("Image upload error:", error);
+        return {
+            success: 0,
+            message: error.message || "Image upload failed"
+        };
+    }
 };
 
 const uploadImageByURL = (url) => {
@@ -49,7 +93,7 @@ export const tools = {
     header: {
         class: Header,
         config: {
-            placeholder: "Type Heading....",
+            placeholder: "Enter heading...",
             levels: [2, 3],
             defaultLevel: 2
         }

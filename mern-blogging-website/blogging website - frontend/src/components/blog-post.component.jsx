@@ -1,10 +1,32 @@
 import getDay from "../common/date";
 import { Link } from "react-router-dom";
+import { useState } from "react";
+import axios from "axios";
 
-const BlogPostCard = ({ content, author }) => {
+const BlogPostCard = ({ content, author, liked, onLikeToggle }) => {
 
     let { publishedAt, tags, title, des, banner, activity: { total_likes }, blog_id: id } = content;
     let { fullname, profile_img, username } = author;
+    const [loading, setLoading] = useState(false);
+
+    const handleLike = async (e) => {
+        e.preventDefault(); // Prevent navigation
+        if (loading) return;
+        
+        setLoading(true);
+        try {
+            const { data } = await axios.post(
+                import.meta.env.VITE_SERVER_DOMAIN + "/like-blog",
+                { blog_id: id }
+            );
+            // Assume API returns { liked_blogs: [...] }
+            if (onLikeToggle) onLikeToggle(data.liked_blogs);
+        } catch (err) {
+            console.error("Failed to like blog", err);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <Link to={`/blog/${id}`} className="flex gap-8 items-center border-b border-grey pb-5 mb-4">
@@ -21,10 +43,14 @@ const BlogPostCard = ({ content, author }) => {
 
                 <div className="flex gap-4 mt-7">
                     <span className="btn-light py-1 px-4">{tags[0]}</span>
-                    <span className="ml-3 flex items-center gap-2 text-dark-grey">
-                        <i className="fi fi-rr-heart text-xl"></i>
+                    <button 
+                        onClick={handleLike}
+                        disabled={loading}
+                        className={`ml-3 flex items-center gap-2 text-dark-grey ${liked ? 'text-red-500' : ''} hover:text-red-500 transition-colors`}
+                    >
+                        <i className={`fi ${liked ? 'fi-sr-heart' : 'fi-rr-heart'} text-xl`}></i>
                         {total_likes}
-                    </span>
+                    </button>
                 </div>
 
             </div>

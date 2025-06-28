@@ -2,183 +2,73 @@ import { Toaster, toast } from "react-hot-toast";
 import AnimationWrapper from "../common/page-animation";
 import { useNavigate } from "react-router-dom";
 import { useContext, useEffect, useState } from "react";
-import { EditorContext } from "../App";
-import { userContext } from "../App";
+import { EditorContext } from "../pages/editor.pages.jsx";
+import { UserContext } from "../App";
 import axios from "axios";
 import { lookInSession } from "../common/session";
 
 const PublishForm = () => {
   const navigate = useNavigate();
   const characterLimit = 200;
-  const { blog, setBlog, setEditorState } = useContext(EditorContext);
-  const { userAuth } = useContext(userContext);
+  const { blog = {}, setBlog, setEditorState } = useContext(EditorContext);
+  const { userAuth } = useContext(UserContext);
   const [tags, setTags] = useState([]);
   const [tagInput, setTagInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [validationErrors, setValidationErrors] = useState({});
 
+  // Initialize tags from blog data
   useEffect(() => {
-    // Merge blog from context with blog_draft from localStorage
-    const storedBlog = JSON.parse(sessionStorage.getItem("blog_draft") || "{}");
-    const mergedBlog = {
-      title: blog.title || storedBlog.title || "",
-      banner: blog.banner || storedBlog.banner || "",
-      content: blog.content || storedBlog.content || [],
-      tags: blog.tags || storedBlog.tags || [],
-      des: blog.des || storedBlog.des || "",
-      author: blog.author || storedBlog.author || { personal_info: {} },
-    };
-    setBlog(mergedBlog);
-    setTags(mergedBlog.tags);
-  }, [setBlog]);
+    if (blog?.tags) {
+      setTags(blog.tags);
+    }
+  }, [blog?.tags]);
 
-  // const publishBlog = (e) => {
-  //   e,preventDefault();
-  //   setIsLoading(true)
-  //   const { title, des, banner, content } = blog;
-  //   const userAuth = JSON.parse(lookInSession("user") || "{}");
-  //   const access_token = userAuth.access_token;
-  //   const publishBlog = async (e) => {
-  //     e.preventDefault();
-  //     setIsLoading(true);
-    
-  //     // Convert EditorJS data to clean format
-  //     const cleanContent = blog.content?.blocks ? {
-  //       time: blog.content.time,
-  //       blocks: blog.content.blocks.map(block => ({
-  //         type: block.type,
-  //         data: block.data
-  //       })),
-  //       version: blog.content.version
-  //     } : { blocks: [] };
-    
-  //     try {
-  //       const loadingToast = toast.loading(blog.draft ? "Saving draft..." : "Publishing...");
-        
-  //       const response = await axios.post(
-  //         `${import.meta.env.VITE_SERVER_DOMAIN}/create-blog`,
-  //         {
-  //           ...blog,
-  //           content: cleanContent,
-  //           draft: blog.draft
-  //         },
-  //         {
-  //           headers: {
-  //             'Authorization': `Bearer ${access_token}`,
-  //             'Content-Type': 'application/json'
-  //           },
-  //           timeout: 10000 // 10 second timeout
-  //         }
-  //       );
-    
-  //       toast.dismiss(loadingToast);
-  //       toast.success(blog.draft ? "Draft saved!" : "Published successfully!");
-        
-  //       if (!blog.draft) {
-  //         sessionStorage.removeItem("blog_draft");
-  //         setTimeout(() => navigate("/"), 1500);
-  //       }
-  //     } catch (error) {
-  //       console.error("Publish error:", error);
-        
-  //       let errorMessage = "Failed to publish";
-  //       if (error.response) {
-  //         errorMessage = error.response.data?.error || 
-  //                      `Server error: ${error.response.status}`;
-  //       } else if (error.request) {
-  //         errorMessage = "No response from server - check your connection";
-  //       }
-    
-  //       toast.error(errorMessage);
-  //     } finally {
-  //       setIsLoading(false);
-  //     }
-  //   };
+  // Validate blog data before publishing
+  const validateBlogData = () => {
+    const errors = {};
 
-  //   console.log("Access Token:", access_token); // Debug token
-  //   console.log("Request Payload:", { title, des, banner, content, tags, draft: false }); // Debug payload
+    if (!blog.title?.trim()) {
+      errors.title = "Blog title is required";
+    } else if (blog.title.trim().length > 100) {
+      errors.title = "Title cannot exceed 100 characters";
+    }
 
-  //   if (!access_token) {
-  //     toast.error("Authentication required");
-  //     navigate("/login");
-  //     return;
-  //   }
-  //   if (e.target.className.includes("disable")) {
-  //     return;
-  //   }
-  //   // const formattedContent = {
-  //   //   blocks: Array.isArray(content) ? content : []
-  //   // };
-  //   if (!title.length) {
-  //     return toast.error("Write blog title before publishing");
-  //   }
+    if (!blog.des?.trim()) {
+      errors.description = "Blog description is required";
+    } else if (blog.des.length > characterLimit) {
+      errors.description = `Description cannot exceed ${characterLimit} characters (current: ${blog.des.length})`;
+    }
 
-  //   if (!des.length || des.length > characterLimit) {
-  //     return toast.error(`Write a description about your blog within ${characterLimit} characters to publish`);
-  //   }
+    if (!blog.banner) {
+      errors.banner = "Blog banner is required";
+    }
 
-  //   if (!tags.length) {
-  //     return toast.error("Enter at least 1 tag to help us rank your blog");
-  //   }
+    if (!blog.tags?.length) {
+      errors.tags = "At least one tag is required";
+    } else if (blog.tags.length > 5) {
+      errors.tags = "Maximum 5 tags allowed";
+    }
 
-  //   let loadingToast = toast.loading("Publishing....");
+    // Validate EditorJS content
+    const blocks = getContentBlocks(blog.content);
+    if (!blocks || !Array.isArray(blocks) || blocks.length === 0) {
+      errors.content = "Blog content is required";
+    }
 
-  //   e.target.classList.add("disable");
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
 
-  //   const validatedContent = blog.content?.blocks ?
-  //     blog.content :
-  //     { blocks: Array.isArray(blog.content) ? blog.content : [] };
-
-  //   let blogObj = {
-  //     title,
-  //     banner,
-  //     des,
-  //     content: validatedContent,
-  //     tags,
-  //     draft: false
-  //   };
-  //   console.log("Sending request with:", {
-  //     url: import.meta.env.VITE_SERVER_DOMAIN + "/create-blog",
-  //     data: blogObj,
-  //     headers: {
-  //       Authorization: `Bearer ${access_token?.substring(0, 10)}...`
-  //     }
-  //   });
-
-  //   axios.post(
-  //     import.meta.env.VITE_SERVER_DOMAIN + "/create-blog",
-  //     blogObj,
-  //     {
-  //       headers: {
-  //         'Authorization': `Bearer ${access_token}`
-  //       }
-  //     }
-  //   )
-  //     .then(() => {
-  //       e.target.classList.remove("disable");
-  //       toast.dismiss(loadingToast);
-  //       toast.success("Published 👍");
-  //       setTimeout(() => navigate("/"), 1500);
-  //     })
-  //     .catch((error) => {
-  //       e.target.classList.remove("disable");
-  //       toast.dismiss(loadingToast);
-
-  //       // Enhanced error handling
-  //       const errorMessage = error.response?.data?.error ||
-  //         error.message ||
-  //         "Failed to publish blog";
-
-  //       console.error("Publish error:", {
-  //         error: error,
-  //         response: error.response,
-  //         request: error.request
-  //       });
-
-  //       toast.error(errorMessage);
-  //     });
-  // }
   const publishBlog = async (e) => {
     e.preventDefault();
+    
+    // Validate before publishing
+    if (!validateBlogData()) {
+      toast.error("Please fix the validation errors before publishing");
+      return;
+    }
+
     setIsLoading(true);
 
     // Get access token from session
@@ -192,76 +82,63 @@ const PublishForm = () => {
       return;
     }
 
-    // Validate required fields
-    if (!blog.title?.trim()) {
-      toast.error("Write blog title before publishing");
-      setIsLoading(false);
-      return;
-    }
-
-    if (!blog.des?.trim() || blog.des.length > characterLimit) {
-      toast.error(`Write a description about your blog within ${characterLimit} characters`);
-      setIsLoading(false);
-      return;
-    }
-
-    if (!blog.tags?.length) {
-      toast.error("Enter at least 1 tag to help us rank your blog");
-      setIsLoading(false);
-      return;
-    }
-
-    // Validate EditorJS content
-    if (!blog.content?.blocks || !Array.isArray(blog.content.blocks)) {
-      toast.error("Invalid content format - please edit your content");
-      setIsLoading(false);
-      return;
-    }
-
     const loadingToast = toast.loading("Publishing...");
 
     try {
+      // Prepare the blog data
+      const blogData = {
+        title: blog.title.trim(),
+        des: blog.des.trim(),
+        banner: blog.banner?.trim() || "",
+        content: Array.isArray(blog.content) ? blog.content[0] : blog.content,
+        tags: blog.tags.map(tag => tag.trim().toLowerCase()),
+        draft: false,
+        id: blog.blog_id
+      };
+
       const response = await axios.post(
         `${import.meta.env.VITE_SERVER_DOMAIN}/create-blog`,
-        {
-          title: blog.title,
-          des: blog.des,
-          banner: blog.banner,
-          content: blog.content,
-          tags: blog.tags.map(tag => tag.trim().toLowerCase()),
-          draft: false
-        },
+        blogData,
         {
           headers: {
             'Authorization': `Bearer ${access_token}`,
             'Content-Type': 'application/json'
           },
-          timeout: 10000
+          timeout: 15000 // 15 second timeout for publishing
         }
       );
 
       toast.dismiss(loadingToast);
       toast.success("Published successfully!");
       sessionStorage.removeItem("blog_draft");
-      setTimeout(() => navigate("/"), 1500);
+      sessionStorage.setItem("refresh_drafts", "1");
+      sessionStorage.setItem("refresh_published", "1");
+      setTimeout(() => navigate("/dashboard/blogs"), 1500);
     } catch (error) {
       toast.dismiss(loadingToast);
-      console.error("Publish error:", error);
       
       let errorMessage = "Failed to publish";
-      if (error.response) {
-        errorMessage = error.response.data?.error || 
-                     `Server error: ${error.response.status}`;
-      } else if (error.request) {
-        errorMessage = "No response from server - check your connection";
+      if (error.response?.status === 401) {
+        errorMessage = "Authentication required. Please log in again.";
+        setTimeout(() => navigate("/login"), 2000);
+      } else if (error.response?.status === 403) {
+        errorMessage = "You don't have permission to publish blogs.";
+      } else if (error.response?.status === 400) {
+        errorMessage = error.response.data?.error || "Invalid blog data";
+      } else if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error.code === 'ECONNABORTED') {
+        errorMessage = "Request timed out. Please try again.";
+      } else if (error.message) {
+        errorMessage = error.message;
       }
 
       toast.error(errorMessage);
+      console.error("Publish error:", error);
     } finally {
       setIsLoading(false);
     }
   };
-
 
   const handleCloseEvent = () => {
     setEditorState("editor");
@@ -269,11 +146,23 @@ const PublishForm = () => {
   };
 
   const handleBlogTitleChange = (e) => {
-    setBlog({ ...blog, title: e.target.value });
+    const newTitle = e.target.value;
+    setBlog({ ...blog, title: newTitle });
+    
+    // Clear validation error when user starts typing
+    if (validationErrors.title) {
+      setValidationErrors(prev => ({ ...prev, title: null }));
+    }
   };
 
   const handleDescriptionChange = (e) => {
-    setBlog({ ...blog, des: e.target.value });
+    const newDes = e.target.value;
+    setBlog({ ...blog, des: newDes });
+    
+    // Clear validation error when user starts typing
+    if (validationErrors.description) {
+      setValidationErrors(prev => ({ ...prev, description: null }));
+    }
   };
 
   const handleTagInputChange = (e) => {
@@ -287,11 +176,19 @@ const PublishForm = () => {
         toast.error("Maximum 5 tags allowed");
         return;
       }
-      if (!tags.includes(tagInput.trim())) {
-        const newTags = [...tags, tagInput.trim()];
+      const newTag = tagInput.trim().toLowerCase();
+      if (!tags.map(t => t.trim().toLowerCase()).includes(newTag)) {
+        const newTags = [...tags, newTag];
         setTags(newTags);
         setBlog({ ...blog, tags: newTags });
         setTagInput("");
+        
+        // Clear validation error when tag is added
+        if (validationErrors.tags) {
+          setValidationErrors(prev => ({ ...prev, tags: null }));
+        }
+      } else {
+        toast.error("Duplicate tag");
       }
     }
   };
@@ -302,10 +199,24 @@ const PublishForm = () => {
     setBlog({ ...blog, tags: newTags });
   };
 
+  // Accept both array and object for content
+  const getContentBlocks = (content) => {
+    if (!content) return null;
+    if (Array.isArray(content)) {
+      return content[0]?.blocks;
+    }
+    return content.blocks;
+  };
+
   if (!blog?.banner) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gray-100">
-        <p className="text-xl text-gray-600">Loading...</p>
+      <div className="flex flex-col items-center justify-center h-screen bg-gray-100">
+        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full text-center">
+          <div className="text-red-500 text-6xl mb-4">🖼️</div>
+          <h2 className="text-xl font-semibold text-gray-800 mb-4">Banner Required</h2>
+          <p className="text-gray-600 mb-6">A banner image is required to publish a blog.</p>
+          <button className="btn-dark px-8" onClick={handleCloseEvent}>Back to Editor</button>
+        </div>
       </div>
     );
   }
@@ -351,6 +262,23 @@ const PublishForm = () => {
                 </span>
               ))}
             </div>
+            
+            {/* Publish Button in Preview Section */}
+            <div className="mt-6 pt-4 border-t border-gray-200">
+              <button
+                onClick={publishBlog}
+                className={`w-full py-3 rounded-lg text-white font-semibold text-sm sm:text-base ${isLoading
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-green-600 hover:bg-green-700"
+                  } transition`}
+                disabled={isLoading}
+              >
+                {isLoading ? "Publishing..." : "🚀 Publish Blog"}
+              </button>
+              <p className="text-xs text-gray-500 text-center mt-2">
+                Review your blog details below before publishing
+              </p>
+            </div>
           </div>
 
           {/* Form Section */}
@@ -366,9 +294,18 @@ const PublishForm = () => {
                   placeholder="Enter blog title"
                   value={blog.title || ""}
                   onChange={handleBlogTitleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm sm:text-base"
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm sm:text-base ${
+                    validationErrors.title ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'
+                  }`}
                   disabled={isLoading}
+                  maxLength={100}
                 />
+                {validationErrors.title && (
+                  <p className="text-red-500 text-sm mt-1">{validationErrors.title}</p>
+                )}
+                <div className="text-right text-xs text-gray-500 mt-1">
+                  {blog.title?.length || 0}/100 characters
+                </div>
               </div>
               <div>
                 <label className="block text-sm sm:text-base font-medium text-gray-700 mb-1">
@@ -378,9 +315,19 @@ const PublishForm = () => {
                   placeholder="Write a short description"
                   value={blog.des || ""}
                   onChange={handleDescriptionChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none h-24 sm:h-32 resize-none text-sm sm:text-base"
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none h-24 sm:h-32 resize-none text-sm sm:text-base ${
+                    validationErrors.description ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'
+                  }`}
                   disabled={isLoading}
+                  maxLength={characterLimit}
                 />
+                {validationErrors.description && (
+                  <p className="text-red-500 text-sm mt-1">{validationErrors.description}</p>
+                )}
+                <div className="flex justify-between items-center mt-1 text-xs text-gray-500">
+                  <span>Current length: {blog.des?.length || 0} characters</span>
+                  <span>Max: {characterLimit} characters</span>
+                </div>
               </div>
               <div>
                 <label className="block text-sm sm:text-base font-medium text-gray-700 mb-1">
@@ -410,10 +357,29 @@ const PublishForm = () => {
                   value={tagInput}
                   onChange={handleTagInputChange}
                   onKeyDown={handleTagKeyDown}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm sm:text-base"
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm sm:text-base ${
+                    validationErrors.tags ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'
+                  }`}
                   disabled={isLoading}
+                  maxLength={20}
                 />
+                {validationErrors.tags && (
+                  <p className="text-red-500 text-sm mt-1">{validationErrors.tags}</p>
+                )}
+                <div className="text-right text-xs text-gray-500 mt-1">
+                  {tags.length}/5 tags • {tagInput.length}/20 characters
+                </div>
               </div>
+              {validationErrors.content && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                  <p className="text-red-600 text-sm">{validationErrors.content}</p>
+                </div>
+              )}
+              {validationErrors.banner && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                  <p className="text-red-600 text-sm">{validationErrors.banner}</p>
+                </div>
+              )}
               <button
                 onClick={publishBlog}
                 className={`w-full py-3 rounded-lg text-white font-semibold text-sm sm:text-base ${isLoading
@@ -424,7 +390,6 @@ const PublishForm = () => {
               >
                 {isLoading ? "Publishing..." : "Publish Blog"}
               </button>
-              <button className="btn-dark px-8" onClick={publishBlog}>Publish</button>
             </div>
           </div>
         </div>

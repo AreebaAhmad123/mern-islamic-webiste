@@ -3,13 +3,24 @@ import mongoose, { Schema } from "mongoose";
 const notificationSchema = mongoose.Schema({
     type: {
         type: String,
-        enum: ["like", "comment", "reply"],
+        enum: ["like", "comment", "reply", "new_user"],
         required: true
     },
     blog: {
         type: Schema.Types.ObjectId,
-        required: true,
-        ref: 'blogs'
+        ref: 'blogs',
+        required: false,
+        validate: {
+            validator: function (value) {
+                // For like, comment, reply, blog is required
+                if (["like", "comment", "reply"].includes(this.type)) {
+                    return !!value;
+                }
+                // For new_user, blog is not required
+                return true;
+            },
+            message: 'blog is required for this notification type.'
+        }
     },
     notification_for: {
         type: Schema.Types.ObjectId,
@@ -36,6 +47,9 @@ const notificationSchema = mongoose.Schema({
     seen: {
         type: Boolean,
         default: false
+    },
+    for_role: {
+        type: String
     }
 },
 {

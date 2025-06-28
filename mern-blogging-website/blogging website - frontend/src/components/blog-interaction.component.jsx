@@ -1,18 +1,22 @@
-import { useContext } from "react";
+import { useContext, useEffect, useState } from "react";
 import { BlogContext } from "../pages/blog.page";
 import { Link } from "react-router-dom";
-import { userContext } from "../App";
+import { UserContext } from "../App";
 import { Toaster, toast } from "react-hot-toast";
 import axios from "axios";
 
 const BlogInteraction = () => {
+    const [ isLiking, setIsLiking ] = useState(false);
     // Correct context consumption
     const {
         blog, 
         setBlog, 
         isLikedByUser, 
-        setLikedByUser
+        setLikedByUser, 
+        commentsWrapper,
+        setCommentsWrapper
     } = useContext(BlogContext);
+    const { userAuth, setUserAuth } = useContext(UserContext);
 
     // Proper destructuring of blog properties
     const {
@@ -32,19 +36,32 @@ const BlogInteraction = () => {
 
     const {
         userAuth: {
-            username, 
-            access_token
+            username = "", 
+            access_token = ""
         } = {}
-    } = useContext(userContext);
+    } = useContext(UserContext) || {};
+
+    useEffect(() => {
+        console.log("BlogInteraction mounted");
+        console.log("Blog data:", blog);
+        console.log("Author username:", author_username);
+        console.log("Current user:", username);
+        console.log("Should show edit button:", username === author_username);
+    }, [blog, username, author_username]);
 
     const handleLike = () => {
+        if(isLiking){
+            return;
+        }
+
         if (access_token) {
+            setIsLiking(true);
             const newLikeStatus = !isLikedByUser;
             const updatedLikes = newLikeStatus ? totalLikes + 1 : totalLikes - 1;
 
             // Update state immediately for responsive UI
-            setLikedByUser(newLikeStatus);
-            setBlog(prev => ({
+            setLikedByUser && setLikedByUser(newLikeStatus);
+            setBlog && setBlog(prev => ({
                 ...prev,
                 activity: {
                     ...prev.activity,
@@ -60,10 +77,27 @@ const BlogInteraction = () => {
                     'Authorization': `Bearer ${access_token}`
                 }
             })
+            .then(() => {
+                // Update liked_blogs in userAuth context
+                setUserAuth && setUserAuth(prev => {
+                    if (!prev) return prev;
+                    let liked_blogs = prev.liked_blogs || [];
+                    if (newLikeStatus) {
+                        // Add blog to liked_blogs
+                        if (!liked_blogs.includes(_id)) {
+                            liked_blogs = [...liked_blogs, _id];
+                        }
+                    } else {
+                        // Remove blog from liked_blogs
+                        liked_blogs = liked_blogs.filter(id => id !== _id);
+                    }
+                    return { ...prev, liked_blogs };
+                });
+            })
             .catch(err => {
                 // Revert state on error
-                setLikedByUser(!newLikeStatus);
-                setBlog(prev => ({
+                setLikedByUser && setLikedByUser(!newLikeStatus);
+                setBlog && setBlog(prev => ({
                     ...prev,
                     activity: {
                         ...prev.activity,
@@ -71,6 +105,9 @@ const BlogInteraction = () => {
                     }
                 }));
                 toast.error("Failed to update like status");
+            })
+            .finally(() => {
+                setIsLiking(false);
             });
         } else {
             toast.error("Please login to like this blog");
@@ -85,15 +122,17 @@ const BlogInteraction = () => {
                 <div className="flex gap-3 items-center">
                     <button
                         onClick={handleLike}
+                        disabled={isLiking}
                         className={`w-10 h-10 rounded-full flex items-center justify-center ${
                             isLikedByUser ? "bg-red/20 text-red" : "bg-grey/80"
-                        }`}
+                        } ${ isLiking ? "cursor-not-allowed" : "" }`}
                     >
                         <i className={`fi ${isLikedByUser ? "fi-sr-heart" : "fi-rr-heart"}`}></i>
                     </button>
                     <p className="text-xl text-dark-grey">{totalLikes}</p>
 
-                    <button className="w-10 h-10 rounded-full flex items-center justify-center bg-grey/80">
+                    <button 
+                    onClick={() =>setCommentsWrapper && setCommentsWrapper(preVal => !preVal)} className="w-10 h-10 rounded-full flex items-center justify-center bg-grey/80 ">
                         <i className="fi fi-rr-comment-dots"></i>
                     </button>
                     <p className="text-xl text-dark-grey">{total_comments}</p>

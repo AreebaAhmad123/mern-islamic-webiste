@@ -1,6 +1,6 @@
 import { useState, useContext, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { userContext } from "../App";
+import { UserContext } from "../App";
 import AnimationWrapper from "../common/page-animation";
 import Loader from "../components/loader.component";
 import axios from "axios";
@@ -42,7 +42,7 @@ const ProfilePage = () => {
 
 
     let { personal_info: { fullname, username: profile_username, profile_img, bio }, account_info: { total_posts, total_reads }, social_links, joinedAt } = profile;
-    const { userAuth } = useContext(userContext);
+    const { userAuth } = useContext(UserContext);
     const username = userAuth?.username || "";
     const fetchUserProfile = () => {
         axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/get-profile", {

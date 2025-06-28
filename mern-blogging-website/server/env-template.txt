@@ -1,0 +1,16 @@
+# MongoDB Connection
+MONGO_URI=mongodb://localhost:27017/islamic-stories-blog
+
+# JWT Secret
+SECRET_ACCESS_KEY=your_jwt_secret_key_here_make_it_long_and_secure
+
+# Cloudinary Configuration
+CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
+CLOUDINARY_API_KEY=your_cloudinary_api_key
+CLOUDINARY_API_SECRET=your_cloudinary_api_secret
+
+# Server Port (optional, defaults to 3000)
+PORT=3000
+
+# Node Environment
+NODE_ENV=development 

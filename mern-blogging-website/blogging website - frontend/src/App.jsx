@@ -1,65 +1,81 @@
-import { Routes, Route } from "react-router-dom";
-import Navbar from "./components/navbar.component";
-import UserAuthForm from "./pages/userAuthForm.page";
-import { createContext, useState } from "react";
-import Editor from "./pages/editor.pages";
-import PublishForm from "./components/publish-form.component";
-import HomePage from "./pages/home.page";
+import { Routes, Route, Navigate } from "react-router-dom";
+import Navbar from "./components/navbar.component.jsx";
+import UserAuthForm from "./pages/userAuthForm.page.jsx";
+import { createContext, useEffect, useState } from "react";
 import { lookInSession } from "./common/session";
-import SearchPage from "./pages/search.page"
-import PageNotFound from "./pages/404.page"
-import ProfilePage from "./pages/profile.page"
-import Blogpage from "./pages/blog.page"
+import Editor from "./pages/editor.pages";
+import HomePage from "./pages/home.page";
+import SearchPage from "./pages/search.page";
+import PageNotFound from "./pages/404.page";
+import ProfilePage from "./pages/profile.page";
+import BlogPage from "./pages/blog.page";
+import SideNav from "./components/sidenavbar.component.jsx";
+import ChangePassword from "./pages/change-password.page";
+import EditProfile from "./pages/edit-profile.page";
+import Notifications from "./pages/notifications.page";
+import ManageBlogs from "./pages/manage-blogs.page";
+import CategoryPage from "./pages/category.page";
+import ContactUsPage from "./pages/contact-us.page";
+import AboutPage from "./pages/about.page";
+import PagesPage from "./pages/pages.page";
+import CategoriesPage from "./pages/categories.page";
 
-
-export const userContext = createContext({});
-export const EditorContext = createContext({});
-
-const blogStructure = {
-  title: "",
-  banner: "",
-  content: { blocks: [] }, // Ensure proper structure
-  tags: [],
-  des: "",
-  author: { personal_info: {} }
-};
+export const UserContext = createContext({});
+export const ThemeContext = createContext({});
+const darkThemePreference = window.matchMedia("(prefers-color-scheme: dark)").matches;
 
 const App = () => {
-  const [userAuth, setUserAuth] = useState(() => {
-    const savedAuth = lookInSession("user");
-    return savedAuth ? JSON.parse(savedAuth) : { access_token: null };
-  });
+  const [userAuth, setUserAuth] = useState({});
+  const [theme, setTheme] = useState(() => darkThemePreference ? "dark" : "light");
 
-  const [blog, setBlog] = useState(blogStructure);
-  const [editorState, setEditorState] = useState("editor");
-  const [textEditor, setTextEditor] = useState({ isReady: false });
+  useEffect(() => {
+    let userInSession = lookInSession("user");
+    let themeInSession = lookInSession("theme");
+    userInSession ? setUserAuth(JSON.parse(userInSession)) : setUserAuth({ access_token: null });
+    if (themeInSession) {
+      setTheme(() => {
+        document.body.setAttribute("data-theme", themeInSession)
+        return themeInSession
+      })
+    }
+    else {
+      document.body.setAttribute("data-theme", theme);
+    }
+  }, [])
 
   return (
-    <userContext.Provider value={{ userAuth, setUserAuth }}>
-      <EditorContext.Provider
-        value={{ blog, setBlog, editorState, setEditorState, textEditor, setTextEditor }}
-      >
+    <ThemeContext.Provider value={{ theme, setTheme }}>
+      <UserContext.Provider value={{ userAuth, setUserAuth }}>
         <Routes>
+          <Route path="/editor" element={<Editor />} />
+          <Route path="/editor/:blog_id" element={<Editor />} />
           <Route path="/" element={<Navbar />}>
             <Route index element={<HomePage />} />
+            <Route path="dashboard" element={<SideNav />}>
+              <Route path="blogs" element={<ManageBlogs />} />
+              <Route path="notification" element={<Notifications />} />
+            </Route>
+            <Route path="settings" element={<SideNav />}>
+              <Route path="edit-profile" element={<EditProfile />} />
+              <Route path="change-password" element={<ChangePassword />} />
+            </Route>
             <Route path="login" element={<UserAuthForm type="login" />} />
+            <Route path="signin" element={<UserAuthForm type="login" />} />
             <Route path="signup" element={<UserAuthForm type="signup" />} />
-            <Route path="categories" element={<h1>Categories Page</h1>} />
-            <Route path="pages" element={<h1>Pages</h1>} />
-            <Route path="contact" element={<h1>Contact Page</h1>} />
-            <Route path="about" element={<h1>About Page</h1>} />
-            <Route path="editor" element={<Editor />} />
-            <Route path="editor/:blog_id" element={<Editor/>}/>
-            <Route path="publish-form" element={<PublishForm />} />
-            <Route path="search/:query" element={<SearchPage/>}/>
-            <Route path="user/:id" element={<ProfilePage/>}/>
-            <Route path="blog/:blog_id" element={<Blogpage/>}/>
-            <Route path="*" element={<PageNotFound/>}/>
+            <Route path="search/:query" element={<SearchPage />} />
+            <Route path="user/:id" element={<ProfilePage />} />
+            <Route path="blog/:blog_id" element={<BlogPage />} />
+            <Route path="category/:category" element={<CategoryPage />} />
+            <Route path="contact" element={<ContactUsPage />} />
+            <Route path="about" element={<AboutPage />} />
+            <Route path="pages" element={<PagesPage />} />
+            <Route path="categories" element={<CategoriesPage />} />
+            <Route path="*" element={<PageNotFound />} />
           </Route>
         </Routes>
-      </EditorContext.Provider>
-    </userContext.Provider>
+      </UserContext.Provider>
+    </ThemeContext.Provider>
   );
-};
+}
 
 export default App;

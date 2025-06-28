@@ -1,12 +1,15 @@
 import { useState, useEffect, useRef, useContext } from "react";
 import { Link, Outlet } from "react-router-dom";
 import { useLocation, useNavigate } from "react-router-dom";
-import { userContext } from '../App';
+import { UserContext } from '../App';
 import UserNavigationPanel from "../components/user-navigation.component"
+import axios from "axios";
+import { ThemeContext } from "../App";
 
 const Navbar = () => {
   const [userNavPanel, setUserNavPanel] = useState(false);
-  const { userAuth } = useContext(userContext);
+  const { userAuth, setUserAuth, new_notification_available } = useContext(UserContext);
+  let {theme, setTheme} = useContext(ThemeContext);
   const access_token = userAuth?.access_token;
   const profile_img = userAuth?.profile_img;
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -29,12 +32,28 @@ const Navbar = () => {
     }, 200);
   }
   const handleSearch = (e) => {
-    let query = e.target.value.trim(); 
-  
+    let query = e.target.value.trim();
+
     if (e.keyCode === 13 && query.length) {
       navigate(`/search/${query}`);
     }
   };
+
+  useEffect(() => {
+    if (access_token) {
+      axios.get(`${import.meta.env.VITE_SERVER_DOMAIN}/new-notification`, {
+        headers: {
+          'Authorization': `Bearer ${access_token}`
+        }
+      })
+        .then(({ data }) => {
+          setUserAuth({ ...userAuth, ...data });
+        })
+        .catch(err => {
+          console.log(err);
+        });
+    }
+  }, [access_token]);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -62,9 +81,16 @@ const Navbar = () => {
     };
   }, []);
 
+  const handleThemeToggle = () => {
+    const newTheme = theme === "dark" ? "light" : "dark";
+    setTheme(newTheme);
+    document.body.setAttribute("data-theme", newTheme);
+    sessionStorage.setItem("theme", newTheme);
+  };
+
   return (
     <>
-      <nav className="navbar flex items-center justify-between">
+      <nav className="navbar flex items-center justify-between z-50">
         <Link to="/" className="text-2xl font-bold text-[#185d4e] shrink-0">
           IslamicStories
         </Link>
@@ -92,12 +118,28 @@ const Navbar = () => {
         <div className="flex items-center gap-5 shrink-0">
           {access_token ? (
             <>
-              <Link className="border-2 border-grey rounded-full px-5 py-0 hidden md:block" to="/editor">
-                <i className="fi fi-rr-file-edit text-sm pt-2 -ml-2"></i> Write
-              </Link>
+              {userAuth?.isAdmin ? (
+                <Link className="border-2 border-grey rounded-full px-5 py-0 hidden md:block" to="/editor">
+                  <i className="fi fi-rr-file-edit text-sm pt-2 -ml-2"></i> Write
+                </Link>
+              ) : null}
+              <button
+                className="w-12 h-12 rounded-full bg-grey relative hover:bg-black/10 flex items-center justify-center hidden md:flex"
+                onClick={handleThemeToggle}
+                aria-label="Toggle theme"
+              >
+                {theme === "dark" ? (
+                  <i className="fi fi-rr-sun text-xl "></i>
+                ) : (
+                  <i className="fi fi-rr-moon-stars text-xl"></i>
+                )}
+              </button>
               <Link to="/dashboard/notification" className="hidden md:block">
                 <button className="w-12 h-12 rounded-full bg-grey relative hover:bg-black/10">
                   <i className="fi fi-rr-bell text-2xl block mt-1"></i>
+                  {new_notification_available ? (
+                    <span className="bg-red w-3 h-3 rounded-full absolute z-10 top-2 right-2"></span>
+                  ) : ""}
                 </button>
               </Link>
 
@@ -115,9 +157,6 @@ const Navbar = () => {
             </>
           ) : (
             <>
-              <Link className="border-2 border-grey rounded-full px-5 py-0 hidden md:block" to="/editor">
-                <i className="fi fi-rr-file-edit text-sm pt-2 -ml-2"></i> Write
-              </Link>
               <Link className="btn-light py-2 hidden md:block" to="/login">
                 Login
               </Link>
@@ -129,29 +168,31 @@ const Navbar = () => {
         </div>
 
         {/* Mobile Header Icons */}
-        <div ref={menuRef} className="flex items-center gap-4 md:gap-6 ">          {/* Search Button */}
+        <div ref={menuRef} className="flex items-center gap-4 md:gap-6 ">
+          {/* Search Button */}
           <button
             className="md:hidden bg-gray-100 w-12 h-12 rounded-full flex items-center justify-center"
             onClick={() => setSearchBoxVisibility(currentVal => !currentVal)}
           >
-            <div className="relative flex items-center">
-              
-              <i className="fi fi-rr-search text-xl absolute left-3 text-gray-500"></i>
-            </div>
-
-
-
+            <i className="fi fi-rr-search text-xl"></i>
           </button>
-          <Link to="/editor">
-            <i className="fi fi-rr-file-edit "></i>
-          </Link>
+          {access_token && userAuth?.isAdmin ? (
+            <Link to="/editor" className="md:hidden">
+              <i className="fi fi-rr-file-edit "></i>
+            </Link>
+          ) : null}
 
           {/* Notification & Profile (Mobile) */}
           {access_token && (
             <>
               <Link to="/dashboard/notification" className="md:hidden">
-                <button className=" rounded-full  relative">
-                  <i className="fi fi-rr-bell text-xl block rounded-full -mt-0.5 hover:bg-black"></i>
+                <button className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center relative">
+                  <i className="fi fi-rr-bell text-xl"></i>
+                  {new_notification_available ? (
+                    <span className="bg-red w-3 h-3 rounded-full absolute z-10 top-2 right-2"></span>
+                  ) : (
+                    ""
+                  )}
                 </button>
               </Link>
               <div className="relative md:hidden" onClick={handleUserNavPanel} onBlur={handleBlur}>
@@ -169,6 +210,19 @@ const Navbar = () => {
               </div>
             </>
           )}
+
+          {/* Theme Toggle Button (Mobile) */}
+          <button
+            className="md:hidden bg-gray-100 w-12 h-12 rounded-full flex items-center justify-center"
+            onClick={handleThemeToggle}
+            aria-label="Toggle theme"
+          >
+            {theme === "dark" ? (
+              <i className="fi fi-rr-sun text-xl"></i>
+            ) : (
+              <i className="fi fi-rr-moon-stars text-xl"></i>
+            )}
+          </button>
 
           {/* Menu Button */}
 

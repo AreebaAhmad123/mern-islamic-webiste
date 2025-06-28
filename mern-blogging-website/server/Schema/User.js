@@ -1,4 +1,5 @@
-import mongoose, { Schema } from "mongoose";
+import mongoose from "mongoose";
+const { Schema } = mongoose;
 
 let profile_imgs_name_list = ["Garfield", "Tinkerbell", "Annie", "Loki", "Cleo", "Angel", "Bob", "Mia", "Coco", "Gracie", "Bear", "Bella", "Abby", "Harley", "Cali", "Leo", "Luna", "Jack", "Felix", "Kiki"];
 let profile_imgs_collections_list = ["notionists-neutral", "adventurer-neutral", "fun-emoji"];
@@ -6,6 +7,16 @@ let profile_imgs_collections_list = ["notionists-neutral", "adventurer-neutral",
 const userSchema = mongoose.Schema({
 
     personal_info: {
+        firstname: {
+            type: String,
+            required: true,
+            minlength: [1, 'First name must be at least 1 letter'],
+        },
+        lastname: {
+            type: String,
+            required: true,
+            minlength: [1, 'Last name must be at least 1 letter'],
+        },
         fullname: {
             type: String,
             lowercase: true,
@@ -36,6 +47,10 @@ const userSchema = mongoose.Schema({
             } 
         },
         
+    },
+    admin:{
+        type: Boolean,
+        default: false
     },
     social_links: {
         youtube: {
@@ -81,6 +96,14 @@ const userSchema = mongoose.Schema({
         type: [ Schema.Types.ObjectId ],
         ref: 'blogs',
         default: [],
+    },
+    liked_blogs:{
+        type: [String],
+        default: []
+    },
+    bookmarked_blogs:{
+        type: [String],
+        default: []
     }
 
 }, 
