@@ -1,14 +1,16 @@
 import { useState, useEffect, useRef, useContext } from "react";
 import { Link, Outlet } from "react-router-dom";
 import { useLocation, useNavigate } from "react-router-dom";
-import { UserContext } from '../App';
+import { UserContext, FooterContext } from '../App';
 import UserNavigationPanel from "../components/user-navigation.component"
 import axios from "axios";
 import { ThemeContext } from "../App";
+import Footer from "./footer.component.jsx";
 
 const Navbar = () => {
   const [userNavPanel, setUserNavPanel] = useState(false);
   const { userAuth, setUserAuth, new_notification_available } = useContext(UserContext);
+  const { blogImages, categories } = useContext(FooterContext);
   let {theme, setTheme} = useContext(ThemeContext);
   const access_token = userAuth?.access_token;
   const profile_img = userAuth?.profile_img;
@@ -16,6 +18,10 @@ const Navbar = () => {
   const searchRef = useRef(null);
   const menuRef = useRef(null);
   const [searchBoxVisibility, setSearchBoxVisibility] = useState(false);
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+
+  // Footer state
+  const [recentComments, setRecentComments] = useState([]);
 
   const location = useLocation();
   let navigate = useNavigate();
@@ -88,6 +94,23 @@ const Navbar = () => {
     sessionStorage.setItem("theme", newTheme);
   };
 
+  // Fetch recent comments for footer
+  useEffect(() => {
+    const fetchRecentComments = async () => {
+      try {
+        // Commented out because /recent-comments endpoint doesn't exist on server
+        // const { data } = await axios.get(import.meta.env.VITE_SERVER_DOMAIN + "/recent-comments");
+        // setRecentComments(data.comments || []);
+        setRecentComments([]); // Set empty array for now
+      } catch (err) {
+        console.error("Error fetching recent comments:", err);
+        setRecentComments([]);
+      }
+    };
+
+    fetchRecentComments();
+  }, []);
+
   return (
     <>
       <nav className="navbar flex items-center justify-between z-50">
@@ -97,19 +120,40 @@ const Navbar = () => {
 
         {/* Navigation links */}
         <div className="hidden md:flex space-x-6 mr-auto ml-8 items-center flex-nowrap">
-          <Link to="/categories" className="text-gray-600 navHover flex items-center">
-            Categories
-            <i className="fi fi-rr-angle-small-down ml-2 navHover pt-1"></i>
+          <Link to="/" className="text-gray-600 navHover">
+            Home
           </Link>
-          <Link to="/pages" className="text-gray-600 navHover flex items-center">
-            Pages
-            <i className="fi fi-rr-angle-small-down ml-2 navHover pt-1"></i>
-          </Link>
+          
+          <div className="relative"
+            onMouseEnter={() => setShowCategoryDropdown(true)}
+            onMouseLeave={() => setShowCategoryDropdown(false)}
+          >
+           
+            <Link to="/categories" className="text-gray-600 navHover flex items-center focus:outline-none" onClick={() => setShowCategoryDropdown(false)}>
+              Categories
+              <i className="fi fi-rr-angle-small-down ml-2 navHover pt-1"></i>
+            </Link>
+            {showCategoryDropdown && (
+              <div className="absolute left-0 mt-2 w-48 bg-white rounded shadow-lg z-50">
+                {categories.map((cat, idx) => (
+                  <Link
+                    key={cat}
+                    to={`/categories/${encodeURIComponent(cat)}`}
+                    className="block px-4 py-2 text-gray-700 hover:bg-gray-100 capitalize"
+                    onClick={() => setShowCategoryDropdown(false)}
+                  >
+                    {cat}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+         
           <Link to="/contact" className="text-gray-600 navHover">
             Contact
           </Link>
           <Link to="/about" className="text-gray-600 navHover">
-            About
+            About 
           </Link>
 
         </div>
@@ -181,7 +225,6 @@ const Navbar = () => {
               <i className="fi fi-rr-file-edit "></i>
             </Link>
           ) : null}
-
           {/* Notification & Profile (Mobile) */}
           {access_token && (
             <>
@@ -210,7 +253,6 @@ const Navbar = () => {
               </div>
             </>
           )}
-
           {/* Theme Toggle Button (Mobile) */}
           <button
             className="md:hidden bg-gray-100 w-12 h-12 rounded-full flex items-center justify-center"
@@ -223,17 +265,13 @@ const Navbar = () => {
               <i className="fi fi-rr-moon-stars text-xl"></i>
             )}
           </button>
-
           {/* Menu Button */}
-
           <button
             className="md:hidden "
             onClick={() => setIsMenuOpen(!isMenuOpen)}
           >
             <i className="fi fi-br-menu-burger text-xl "></i>
-
           </button>
-
         </div>
 
         {/* Search input — mobile */}
@@ -260,9 +298,29 @@ const Navbar = () => {
         {isMenuOpen && (
           <div className="md:hidden absolute top-16 left-0 right-0 bg-white py-4 px-4 shadow-lg z-50">
             <div className="flex flex-col space-y-4">
-              <Link to="/categories" className="text-gray-600 navHover">
-                Categories
-              </Link>
+              <div>
+                <button
+                  className="text-gray-600 navHover flex items-center w-full text-left"
+                  onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
+                >
+                  Categories
+                  <i className="fi fi-rr-angle-small-down ml-2 navHover pt-1"></i>
+                </button>
+                {showCategoryDropdown && (
+                  <div className="ml-4 mt-1 bg-white rounded shadow-lg z-50">
+                    {categories.map((cat, idx) => (
+                      <Link
+                        key={cat}
+                        to={`/categories/${encodeURIComponent(cat)}`}
+                        className="block px-4 py-2 text-gray-700 hover:bg-gray-100 capitalize"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        {cat}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
               <Link to="/pages" className="text-gray-600 navHover">
                 Pages
               </Link>
@@ -293,6 +351,13 @@ const Navbar = () => {
       }
 
       <Outlet />
+      
+      {/* Footer */}
+      <Footer 
+        instagramImages={blogImages}
+        recentComments={recentComments}
+        categories={categories}
+      />
     </>
   );
 };

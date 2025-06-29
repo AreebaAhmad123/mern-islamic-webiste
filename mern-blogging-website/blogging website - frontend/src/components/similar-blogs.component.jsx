@@ -7,6 +7,8 @@ import Loader from "./loader.component";
 const SimilarBlogs = ({ currentBlogId, tags }) => {
     const [similarBlogs, setSimilarBlogs] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [displayCount, setDisplayCount] = useState(4);
+    const [loadingMore, setLoadingMore] = useState(false);
 
     useEffect(() => {
         const fetchSimilarBlogs = async () => {
@@ -21,7 +23,7 @@ const SimilarBlogs = ({ currentBlogId, tags }) => {
                     `${import.meta.env.VITE_SERVER_DOMAIN}/search-blogs`,
                     {
                         tag: tags[0],
-                        limit: 6,
+                        limit: 20, // Fetch more blogs initially to support load more
                         eleminate_blog: currentBlogId
                     }
                 );
@@ -37,6 +39,15 @@ const SimilarBlogs = ({ currentBlogId, tags }) => {
         fetchSimilarBlogs();
     }, [currentBlogId, tags]);
 
+    const handleLoadMore = () => {
+        setLoadingMore(true);
+        // Simulate loading delay for better UX
+        setTimeout(() => {
+            setDisplayCount(prev => prev + 4);
+            setLoadingMore(false);
+        }, 500);
+    };
+
     if (loading) {
         return <Loader />;
     }
@@ -45,10 +56,13 @@ const SimilarBlogs = ({ currentBlogId, tags }) => {
         return null;
     }
 
+    const displayedBlogs = similarBlogs.slice(0, displayCount);
+    const hasMoreBlogs = displayCount < similarBlogs.length;
+
     return (
         <div className="mt-14">
             <h1 className="text-2xl mb-10 font-medium">Similar Blogs</h1>
-            {similarBlogs.map((blog, i) => {
+            {displayedBlogs.map((blog, i) => {
                 let { author: { personal_info } } = blog;
                 return (
                     <AnimationWrapper key={i} transition={{ duration: 1, delay: i * 0.1 }}>
@@ -56,6 +70,25 @@ const SimilarBlogs = ({ currentBlogId, tags }) => {
                     </AnimationWrapper>
                 );
             })}
+            
+            {hasMoreBlogs && (
+                <div className="flex justify-center mt-8">
+                    <button
+                        onClick={handleLoadMore}
+                        disabled={loadingMore}
+                        className="btn-dark py-3 px-8 rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {loadingMore ? (
+                            <div className="flex items-center gap-2">
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                Loading...
+                            </div>
+                        ) : (
+                            "Load More"
+                        )}
+                    </button>
+                </div>
+            )}
         </div>
     );
 };

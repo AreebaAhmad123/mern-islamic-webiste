@@ -564,30 +564,43 @@ const BlogEditor = () => {
   };
 
   const handlePublishEvent = async () => {
+    console.log("Publish button clicked in BlogEditor");
+    console.log("Current blog state:", blog);
+    console.log("Editor ref ready:", editorRef.current?.isReady);
+    
     // Validate all required fields for publishing
     if (!banner) {
+      console.log("Validation failed: No banner");
       return toast.error("Upload a blog banner to publish it");
     }
     if (!title.trim()) {
+      console.log("Validation failed: No title");
       return toast.error("Write blog title to publish it");
     }
     if (!des.trim()) {
+      console.log("Validation failed: No description");
       return toast.error("Write blog description to publish it");
     }
     if (des.trim().length > 200) {
+      console.log("Validation failed: Description too long");
       return toast.error("Description cannot exceed 200 characters");
     }
     if (!tags.length) {
+      console.log("Validation failed: No tags");
       return toast.error("Add at least one tag to publish it");
     }
     
     try {
       if (!editorRef.current?.isReady) {
+        console.log("Editor not ready");
         throw new Error("Editor not ready");
       }
       
       const data = await editorRef.current.save();
+      console.log("Editor save data:", data);
+      
       if (!data.blocks?.length) {
+        console.log("Validation failed: No content blocks");
         return toast.error("Write something in your blog to publish it");
       }
       
@@ -604,6 +617,7 @@ const BlogEditor = () => {
         id: blog?.blog_id || blogId || null
       };
       
+      console.log("Setting blog data for publish form:", blogData);
       setBlog(blogData);
       setEditorState("publish");
       sessionStorage.setItem("blog_draft", JSON.stringify(blogData));

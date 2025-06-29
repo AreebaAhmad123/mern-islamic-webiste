@@ -44,6 +44,7 @@ const ProfilePage = () => {
     let { personal_info: { fullname, username: profile_username, profile_img, bio }, account_info: { total_posts, total_reads }, social_links, joinedAt } = profile;
     const { userAuth } = useContext(UserContext);
     const username = userAuth?.username || "";
+    
     const fetchUserProfile = () => {
         axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/get-profile", {
             username: profileId
@@ -59,54 +60,43 @@ const ProfilePage = () => {
                 }
                 setLoading(false);
             })
-
             .catch(err => {
                 console.log(err);
                 setLoading(false);
-
             });
     }
-    { error && <NoDataMessage message={error} /> }
 
-    const getBlogs = ({ page = 1, user_id }) => {
+    const getBlogs = async ({ page = 1, user_id }) => {
         user_id = user_id || blogs?.user_id;
 
-        axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/search-blogs", {
-            author: user_id,
-            page
-        })
-            .then(({ data: { blogs: newBlogs, total } }) => { // Destructure blogs and total
-                setBlogs(prev => {
-                    // Reset if new user or first page
-                    if (page === 1 || !prev || prev.user_id !== user_id) {
-                        return {
-                            results: newBlogs,
-                            page: 1,
-                            totalDocs: total,
-                            user_id
-                        };
-                    }
-
-                    // Merge and avoid duplicates
-                    const mergedBlogs = [...prev.results];
-                    newBlogs.forEach(blog => {
-                        if (!mergedBlogs.some(b => b.blog_id === blog.blog_id)) {
-                            mergedBlogs.push(blog);
-                        }
-                    });
-
-                    return {
-                        results: mergedBlogs,
-                        page: page,
-                        totalDocs: total,
-                        user_id
-                    };
-                });
-            })
-            .catch(err => {
-                console.error("Error fetching blogs:", err);
+        try {
+            const { data: { blogs: newBlogs, total } } = await axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/search-blogs", {
+                author: user_id,
+                page
             });
+
+            const formattedData = await filterPaginationData({
+                state: blogs,
+                data: newBlogs,
+                page,
+                countRoute: "/search-blogs-count",
+                data_to_send: { author: user_id },
+                create_new_arr: page === 1
+            });
+
+            if (formattedData) {
+                setBlogs(formattedData);
+            }
+        } catch (err) {
+            console.error("Error fetching blogs:", err);
+        }
     };
+
+    // Wrapper function for LoadMoreDataBtn
+    const loadMoreBlogs = (user_id, page) => {
+        getBlogs({ page, user_id });
+    };
+
     useEffect(() => {
         if (profileId !== profileLoaded) {
             setBlogs(null);
@@ -129,56 +119,6 @@ const ProfilePage = () => {
             {
                 loading ? <Loader /> :
                     profile.personal_info.username.length ?
-                        // <section className="h-cover md:flex flex-row-reverse items-start gap-5 min-[1100px]:gap-12">
-                        //     {/* Profile Card - Sticky on desktop */}
-                        //     <div className="flex flex-col max-md:items-center gap-5 min-w-[250px] md:w-[50%] md:pl-8 md:border-l border-grey md:sticky md:top-[100px] md:py-10">
-                        //         <img src={profile_img} className="w-48 h-48 bg-grey rounded-full md:w-32 md:h-32" />
-                        //         <h1 className="text-2xl font-medium">{profile_username}</h1>
-                        //         <p className="text-xl capitalize h-6">{fullname}</p>
-                        //         <p>{total_posts.toLocaleString()} Blogs - {total_reads.toLocaleString()} Reads</p>
-                        //         <div className="flex gap-4 mt-2">
-                        //             {
-                        //                 profileId === username ?
-                        //                     <Link to="/settings/edit-profile" className="btn-light rounded-md">Edit Profile</Link>
-                        //                     : ""
-                        //             }
-                        //         </div>
-                        //     </div>
-
-                        //     {/* Main Content Area */}
-                        //     <div className="max-md:mt-12 w-full">
-                        //         <InPageNavigation routes={["Blogs Published", "About"]} defaultHidden={["About"]}>
-                        //             <>
-                        //                 {
-                        //                     blogs == null ? (
-                        //                         <Loader />
-                        //                     ) : (
-                        //                         blogs.results.length ?
-                        //                             blogs.results.map((blog, i) => (
-                        //                                 <AnimationWrapper key={i} transition={{ duration: 1, delay: i * 0.1 }}>
-                        //                                     <BlogPostCard content={blog} author={blog.author.personal_info} />
-                        //                                 </AnimationWrapper>
-                        //                             )) :
-                        //                             <NoDataMessage message="No Blogs Published" />
-                        //                     )
-                        //                 }
-
-
-                        //                 {
-                        //                     blogs?.results.length < blogs?.totalDocs && (
-                        //                         <LoadMoreDataBtn
-                        //                             state={blogs}
-                        //                             fetchDataFun={() => getBlogs({ page: blogs.page + 1 })}
-                        //                         />
-                        //                     )
-                        //                 }
-                        //             </>
-
-
-                        //             <AboutUser className="md:hidden" bio={bio} social_links={social_links} joinedAt={joinedAt} />
-                        //         </InPageNavigation>
-                        //     </div>
-                        // </section>
                         <section className="h-cover md:flex flex-row-reverse items-start gap-5 min-[1100px]:gap-12">
                             {/* Desktop Sidebar */}
                             <div className="flex flex-col max-md:items-center gap-5 min-w-[250px] md:w-[50%] md:pl-8 md:border-l border-grey md:sticky md:top-[100px] md:py-10">
@@ -201,11 +141,20 @@ const ProfilePage = () => {
                                     {blogs == null ? (
                                         <Loader />
                                     ) : blogs.results.length ? (
-                                        blogs.results.map((blog, i) => (
-                                            <AnimationWrapper key={i}>
-                                                <BlogPostCard content={blog} author={blog.author.personal_info} />
-                                            </AnimationWrapper>
-                                        ))
+                                        <>
+                                            {blogs.results.map((blog, i) => (
+                                                <AnimationWrapper key={i} transition={{ duration: 1, delay: i * 0.1 }}>
+                                                    <BlogPostCard content={blog} author={blog.author.personal_info} />
+                                                </AnimationWrapper>
+                                            ))}
+                                            
+                                            {/* Load More Button */}
+                                            <LoadMoreDataBtn
+                                                state={blogs}
+                                                fetchDataFun={loadMoreBlogs}
+                                                additionalParam={blogs.user_id}
+                                            />
+                                        </>
                                     ) : (
                                         <NoDataMessage message="No Blogs Published" />
                                     )}
@@ -221,6 +170,6 @@ const ProfilePage = () => {
             }
         </AnimationWrapper>
     )
-
 }
+
 export default ProfilePage;

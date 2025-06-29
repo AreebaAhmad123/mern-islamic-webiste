@@ -1,64 +1,114 @@
-import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import axios from 'axios';
-import Loader from '../components/loader.component';
+import React, { useState, useEffect, useContext } from "react";
+import { useParams } from "react-router-dom";
+import { FooterContext } from "../App";
+import Loader from "../components/loader.component";
+import PostCard from "../components/PostCard";
+import LoadMoreDataBtn from "../components/load-more.component";
+import { filterPaginationData } from "../common/filter-pagination-data";
+import axios from "axios";
 
 const CategoriesPage = () => {
-  const [categories, setCategories] = useState([]);
+  const { categories, setCategories } = useContext(FooterContext);
+  const { categoryName } = useParams(); // expects route: /categories/:categoryName
+  const [blogs, setBlogs] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    // Fetch categories from the server
-    axios.get(`${import.meta.env.VITE_SERVER_DOMAIN}/categories`)
-      .then(({ data }) => {
-        setCategories(data.categories || []);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error('Error fetching categories:', err);
-        // Fallback to default categories if API fails
-        setCategories([
-          { name: 'Islamic History', count: 0, description: 'Stories from Islamic history and tradition' },
-          { name: 'Prophet Stories', count: 0, description: 'Narratives about the Prophet Muhammad (PBUH) and other prophets' },
-          { name: 'Contemporary', count: 0, description: 'Modern Muslim experiences and reflections' },
-          { name: 'Spiritual', count: 0, description: 'Spiritual insights and guidance' },
-          { name: 'Community', count: 0, description: 'Stories about Muslim communities around the world' },
-          { name: 'Education', count: 0, description: 'Educational content about Islam and Muslim culture' }
-        ]);
-        setLoading(false);
-      });
-  }, []);
+  const fetchBlogs = async (page = 1) => {
+    try {
+      let response;
+      if (categoryName) {
+        // Use search-blogs endpoint for category filtering
+        response = await axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/search-blogs", {
+          tag: categoryName,
+          page
+        });
+      } else {
+        // Use latest-blogs endpoint for all blogs
+        response = await axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/latest-blogs", { page });
+      }
 
-  if (loading) {
-    return <Loader />;
-  }
+      const { data } = response;
+      if (data.blogs && Array.isArray(data.blogs)) {
+        const formattedData = await filterPaginationData({
+          state: blogs,
+          data: data.blogs,
+          page,
+          countRoute: categoryName ? "/search-blogs-count" : "/all-latest-blogs-count",
+          create_new_arr: page === 1,
+          data_to_send: categoryName ? { tag: categoryName } : {}
+        });
+
+        if (formattedData) {
+          setBlogs(formattedData);
+        }
+
+        // Set categories if not already set
+        if (categories.length === 0 && setCategories && page === 1) {
+          const baseCategories = [
+            "islam",
+            "prophets",
+            "religion",
+            "basics",
+            "sahaba",
+            "anbiya",
+          ];
+          const tagCategories = data.blogs.flatMap((blog) => blog.tags || []);
+          const allCategories = Array.from(
+            new Set([...baseCategories, ...tagCategories])
+          );
+          setCategories(allCategories);
+        }
+      }
+      setLoading(false);
+    } catch (error) {
+      console.error("Error fetching blogs:", error);
+      setBlogs(prev => prev || { results: [], page: 1, totalDocs: 0 });
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    setBlogs(null);
+    setLoading(true);
+    fetchBlogs(1);
+  }, [categoryName]);
+
+  if (loading) return <Loader />;
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold text-gray-800 mb-6">Categories</h1>
+    <div className="container mx-auto px-4 py-8">
       
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {categories.map((category, index) => (
-          <Link 
-            key={index}
-            to={`/category/${encodeURIComponent(category.name)}`}
-            className="block p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 border border-gray-200"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-800">{category.name}</h2>
-              <span className="bg-blue-100 text-blue-800 text-sm font-medium px-2.5 py-0.5 rounded-full">
-                {category.count || 0} stories
-              </span>
-            </div>
-            <p className="text-gray-600">{category.description}</p>
-          </Link>
-        ))}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        {blogs && blogs.results && blogs.results.length > 0 ? (
+          blogs.results.map((blog) => (
+            <PostCard
+              key={blog._id || blog.blog_id}
+              post={{
+                banner: blog.banner,
+                title: blog.title,
+                description: blog.des || blog.description,
+                author: {
+                  avatar: blog.author?.personal_info?.profile_img,
+                  name: blog.author?.personal_info?.fullname,
+                },
+                date: blog.publishedAt || blog.date,
+                blog_id: blog.blog_id || blog._id,
+              }}
+            />
+          ))
+        ) : (
+          <div className="col-span-full text-center text-gray-500">
+            No blogs found{categoryName ? ` for '${categoryName}'` : ""}.
+          </div>
+        )}
       </div>
       
-      {categories.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-gray-500 text-lg">No categories available at the moment.</p>
-          <p className="text-gray-400 mt-2">Check back soon for new content!</p>
+      {blogs && (
+        <div className="flex justify-center mt-8">
+          <LoadMoreDataBtn 
+            state={blogs} 
+            fetchDataFun={fetchBlogs}
+          />
         </div>
       )}
     </div>

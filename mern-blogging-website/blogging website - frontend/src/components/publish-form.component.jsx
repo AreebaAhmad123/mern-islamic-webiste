@@ -26,6 +26,7 @@ const PublishForm = () => {
 
   // Validate blog data before publishing
   const validateBlogData = () => {
+    console.log("Validating blog data:", blog);
     const errors = {};
 
     if (!blog.title?.trim()) {
@@ -52,10 +53,12 @@ const PublishForm = () => {
 
     // Validate EditorJS content
     const blocks = getContentBlocks(blog.content);
+    console.log("Content blocks:", blocks);
     if (!blocks || !Array.isArray(blocks) || blocks.length === 0) {
       errors.content = "Blog content is required";
     }
 
+    console.log("Validation errors:", errors);
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -63,17 +66,22 @@ const PublishForm = () => {
   const publishBlog = async (e) => {
     e.preventDefault();
     
+    console.log("Publish button clicked");
+    console.log("Current blog data:", blog);
+    console.log("Current userAuth:", userAuth);
+    
     // Validate before publishing
     if (!validateBlogData()) {
+      console.log("Validation failed");
       toast.error("Please fix the validation errors before publishing");
       return;
     }
 
     setIsLoading(true);
 
-    // Get access token from session
-    const userAuth = JSON.parse(lookInSession("user") || "{}");
-    const access_token = userAuth.access_token;
+    // Get access token from UserContext (consistent with other components)
+    const access_token = userAuth?.access_token;
+    console.log("Access token available:", !!access_token);
 
     if (!access_token) {
       toast.error("Authentication required");
@@ -95,6 +103,8 @@ const PublishForm = () => {
         draft: false,
         id: blog.blog_id
       };
+      
+      console.log("Prepared blog data for publishing:", blogData);
 
       const response = await axios.post(
         `${import.meta.env.VITE_SERVER_DOMAIN}/create-blog`,
@@ -108,6 +118,7 @@ const PublishForm = () => {
         }
       );
 
+      console.log("Publish response:", response.data);
       toast.dismiss(loadingToast);
       toast.success("Published successfully!");
       sessionStorage.removeItem("blog_draft");
@@ -115,6 +126,7 @@ const PublishForm = () => {
       sessionStorage.setItem("refresh_published", "1");
       setTimeout(() => navigate("/dashboard/blogs"), 1500);
     } catch (error) {
+      console.error("Publish error details:", error);
       toast.dismiss(loadingToast);
       
       let errorMessage = "Failed to publish";
@@ -202,10 +214,20 @@ const PublishForm = () => {
   // Accept both array and object for content
   const getContentBlocks = (content) => {
     if (!content) return null;
-    if (Array.isArray(content)) {
-      return content[0]?.blocks;
+    
+    try {
+      if (Array.isArray(content)) {
+        // If content is an array, get blocks from the first item
+        return content[0]?.blocks || null;
+      } else if (typeof content === 'object' && content !== null) {
+        // If content is an object, get blocks directly
+        return content.blocks || null;
+      }
+      return null;
+    } catch (error) {
+      console.error("Error parsing content blocks:", error);
+      return null;
     }
-    return content.blocks;
   };
 
   if (!blog?.banner) {
@@ -269,7 +291,7 @@ const PublishForm = () => {
                 onClick={publishBlog}
                 className={`w-full py-3 rounded-lg text-white font-semibold text-sm sm:text-base ${isLoading
                   ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-green-600 hover:bg-green-700"
+                  : "bg-yellow-400 hover:bg-yellow-500"
                   } transition`}
                 disabled={isLoading}
               >
@@ -380,16 +402,7 @@ const PublishForm = () => {
                   <p className="text-red-600 text-sm">{validationErrors.banner}</p>
                 </div>
               )}
-              <button
-                onClick={publishBlog}
-                className={`w-full py-3 rounded-lg text-white font-semibold text-sm sm:text-base ${isLoading
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-blue-600 hover:bg-blue-700"
-                  } transition`}
-                disabled={isLoading}
-              >
-                {isLoading ? "Publishing..." : "Publish Blog"}
-              </button>
+              
             </div>
           </div>
         </div>

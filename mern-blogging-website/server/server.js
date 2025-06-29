@@ -354,18 +354,22 @@ function escapeRegex(string) {
 }
 
 server.post("/search-blogs-count", (req, res) => {
-    let { tag } = req.body;
+    let { tag, author } = req.body;
 
     // Match the query from search-blogs endpoint
     let findQuery = { draft: false };
     
     if (tag && tag.trim()) {
-        findQuery.tags = tag;
+        findQuery.tags = { $regex: new RegExp(tag.trim(), 'i') };
+    }
+
+    if (author) {
+        findQuery.author = author;
     }
 
     Blog.countDocuments(findQuery)
         .then(count => {
-            console.log(`Total blogs count for tag: ${tag} = ${count}`);
+            console.log(`Total blogs count for tag: ${tag}, author: ${author} = ${count}`);
             return res.status(200).json({ totalDocs: count });
         })
         .catch(err => {
@@ -375,17 +379,22 @@ server.post("/search-blogs-count", (req, res) => {
 });
 
 server.post("/search-blogs", (req, res) => {
-    let { tag, page = 1 } = req.body;
+    let { tag, author, page = 1 } = req.body;
 
     // Make the query less restrictive - remove the total_reads requirement
     let findQuery = { draft: false };
     
     // Add tag filter only if tag is provided
     if (tag && tag.trim()) {
-        findQuery.tags = tag;
+        findQuery.tags = { $regex: new RegExp(tag.trim(), 'i') };
     }
 
-    let maxLimit = 5;
+    // Add author filter only if author is provided
+    if (author) {
+        findQuery.author = author;
+    }
+
+    let maxLimit = 16;
     let skipDocs = (page - 1) * maxLimit;
 
     Blog.find(findQuery)
@@ -395,7 +404,7 @@ server.post("/search-blogs", (req, res) => {
         .skip(skipDocs)
         .limit(maxLimit)
         .then(blogs => {
-            console.log(`Found ${blogs.length} blogs for tag: ${tag}, page: ${page}`);
+            console.log(`Found ${blogs.length} blogs for tag: ${tag}, author: ${author}, page: ${page}`);
             return res.status(200).json({ blogs });
         })
         .catch(err => {
@@ -421,6 +430,25 @@ server.get("/latest-blogs", (req, res) => {
         .populate("author", "personal_info.fullname personal_info.username personal_info.profile_img")
         .sort({ "publishedAt": -1 })
         .select("title des banner activity publishedAt blog_id tags -_id")
+        .limit(maxLimit)
+        .then(blogs => {
+            return res.status(200).json({ blogs });
+        })
+        .catch(err => {
+            return res.status(500).json({ error: err.message });
+        });
+});
+
+server.post("/latest-blogs", (req, res) => {
+    let { page = 1 } = req.body;
+    let maxLimit = 16;
+    let skipDocs = (page - 1) * maxLimit;
+
+    Blog.find({ draft: false })
+        .populate("author", "personal_info.fullname personal_info.username personal_info.profile_img")
+        .sort({ "publishedAt": -1 })
+        .select("title des banner activity publishedAt blog_id tags -_id")
+        .skip(skipDocs)
         .limit(maxLimit)
         .then(blogs => {
             return res.status(200).json({ blogs });

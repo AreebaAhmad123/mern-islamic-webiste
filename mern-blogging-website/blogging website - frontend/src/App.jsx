@@ -22,11 +22,14 @@ import CategoriesPage from "./pages/categories.page";
 
 export const UserContext = createContext({});
 export const ThemeContext = createContext({});
+export const FooterContext = createContext({});
 const darkThemePreference = window.matchMedia("(prefers-color-scheme: dark)").matches;
 
 const App = () => {
   const [userAuth, setUserAuth] = useState({});
   const [theme, setTheme] = useState(() => darkThemePreference ? "dark" : "light");
+  const [blogImages, setBlogImages] = useState([]);
+  const [categories, setCategories] = useState([]);
 
   useEffect(() => {
     let userInSession = lookInSession("user");
@@ -46,33 +49,35 @@ const App = () => {
   return (
     <ThemeContext.Provider value={{ theme, setTheme }}>
       <UserContext.Provider value={{ userAuth, setUserAuth }}>
-        <Routes>
-          <Route path="/editor" element={<Editor />} />
-          <Route path="/editor/:blog_id" element={<Editor />} />
-          <Route path="/" element={<Navbar />}>
-            <Route index element={<HomePage />} />
-            <Route path="dashboard" element={<SideNav />}>
-              <Route path="blogs" element={<ManageBlogs />} />
-              <Route path="notification" element={<Notifications />} />
+        <FooterContext.Provider value={{ blogImages, setBlogImages, categories, setCategories }}>
+          <Routes>
+            <Route path="/editor" element={<Editor />} />
+            <Route path="/editor/:blog_id" element={<Editor />} />
+            <Route path="/" element={<Navbar />}>
+              <Route index element={<HomePage />} />
+              <Route path="dashboard" element={<SideNav />}>
+                <Route path="blogs" element={<ManageBlogs />} />
+                <Route path="notification" element={<Notifications />} />
+              </Route>
+              <Route path="settings" element={<SideNav />}>
+                <Route path="edit-profile" element={<EditProfile />} />
+                <Route path="change-password" element={<ChangePassword />} />
+              </Route>
+              <Route path="login" element={<UserAuthForm type="login" />} />
+              <Route path="signin" element={<UserAuthForm type="login" />} />
+              <Route path="signup" element={<UserAuthForm type="signup" />} />
+              <Route path="search/:query" element={<SearchPage />} />
+              <Route path="user/:id" element={<ProfilePage />} />
+              <Route path="blog/:blog_id" element={<BlogPage />} />
+              <Route path="categories/:categoryName" element={<CategoriesPage />} />
+              <Route path="categories" element={<CategoriesPage />} />
+              <Route path="contact" element={<ContactUsPage />} />
+              <Route path="about" element={<AboutPage />} />
+              <Route path="pages" element={<PagesPage />} />
+              <Route path="*" element={<PageNotFound />} />
             </Route>
-            <Route path="settings" element={<SideNav />}>
-              <Route path="edit-profile" element={<EditProfile />} />
-              <Route path="change-password" element={<ChangePassword />} />
-            </Route>
-            <Route path="login" element={<UserAuthForm type="login" />} />
-            <Route path="signin" element={<UserAuthForm type="login" />} />
-            <Route path="signup" element={<UserAuthForm type="signup" />} />
-            <Route path="search/:query" element={<SearchPage />} />
-            <Route path="user/:id" element={<ProfilePage />} />
-            <Route path="blog/:blog_id" element={<BlogPage />} />
-            <Route path="category/:category" element={<CategoryPage />} />
-            <Route path="contact" element={<ContactUsPage />} />
-            <Route path="about" element={<AboutPage />} />
-            <Route path="pages" element={<PagesPage />} />
-            <Route path="categories" element={<CategoriesPage />} />
-            <Route path="*" element={<PageNotFound />} />
-          </Route>
-        </Routes>
+          </Routes>
+        </FooterContext.Provider>
       </UserContext.Provider>
     </ThemeContext.Provider>
   );
