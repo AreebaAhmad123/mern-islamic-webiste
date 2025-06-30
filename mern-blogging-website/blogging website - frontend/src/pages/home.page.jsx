@@ -20,6 +20,7 @@ import { Navigation, Pagination, Autoplay } from 'swiper/modules';
 import getDay from "../common/date";
 import PostCard from "../components/PostCard.jsx";
 import { Link } from "react-router-dom";
+import getFullDay from "../common/date";
 
 const HomePage = () => {
     let [blogs, setBlog] = useState(null);
@@ -214,10 +215,15 @@ const HomePage = () => {
             const { data } = await axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/latest-blogs", { page });
             const startIndex = (page - 1) * 4;
             const endIndex = startIndex + 4;
-            const newBlogs = data.blogs.slice(startIndex, endIndex);
             
+            // Format the date for each blog before setting the state
+            const formattedBlogs = data.blogs.slice(startIndex, endIndex).map(blog => ({
+                ...blog,
+                date: getDay(blog.publishedAt) // Ensure date is formatted
+            }));
+
             // Replace the displayed blogs (slider behavior)
-            setNewBlogs(newBlogs);
+            setNewBlogs(formattedBlogs);
         } catch (err) {
             console.error("Error fetching new blogs:", err);
             setNewBlogs([]); // Set empty array on error
@@ -477,9 +483,9 @@ const HomePage = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
                         {
                             popularLoading ? (
-                                <div className="col-span-full flex justify-center py-8">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-6 h-6 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
+                                <div className="col-span-full flex justify-center py-8 ">
+                                    <div className="flex items-center gap-2 ">
+                                        <div className="w-6 h-6 border-2 border-gray-300 border-yellow-4600 rounded-full animate-spin "></div>
                                         <span className="text-gray-600">Loading blogs...</span>
                                     </div>
                                 </div>
@@ -539,7 +545,7 @@ const HomePage = () => {
                         {newLoading ? (
                             <div className="col-span-full flex justify-center py-8">
                                 <div className="flex items-center gap-2">
-                                    <div className="w-6 h-6 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
+                                    <div className="w-6 h-6 border-2 border-gray-300 border-yellow-400 rounded-full animate-spin"></div>
                                     <span className="text-gray-600">Loading blogs...</span>
                                 </div>
                             </div>
@@ -567,8 +573,8 @@ const HomePage = () => {
                                                 <h2 className="font-semibold text-lg line-clamp-2">{blog.title}</h2>
                                                 <p className="text-gray-500 text-sm mt-1 line-clamp-2">{blog.des || blog.description}</p>
                                             </div>
-                                            <div className="flex items-center justify-between mt-4">
-                                                <div className="flex items-center gap-2 bg-gray-100 rounded-lg px-3 py-2">
+                                            <div className="flex items-center justify-between mt-4 bg-gray-100 rounded-lg px-3 ">
+                                                <div className="flex items-center gap-2 rounded-lg px-3 py-2">
                                                     <img
                                                         src={blog.author?.personal_info?.profile_img || "/src/imgs/default.jpg"}
                                                         alt={blog.author?.personal_info?.fullname}
@@ -577,7 +583,7 @@ const HomePage = () => {
                                                     <div className="flex flex-col">
                                                         <span className="text-sm font-medium">{blog.author?.personal_info?.fullname}</span>
                                                         <span className="text-xs text-gray-500 mt-0.5">
-                                                            {blog.createdAt ? getDay(blog.createdAt) : ""}
+                                                            {blog.publishedAt ? getFullDay(blog.publishedAt) : ""}
                                                         </span>
                                                     </div>
                                                 </div>
@@ -639,7 +645,7 @@ const HomePage = () => {
                             trendyLoading ? (
                                 <div className="col-span-full flex justify-center py-8">
                                     <div className="flex items-center gap-2">
-                                        <div className="w-6 h-6 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
+                                        <div className="w-6 h-6 border-2 border-gray-300 border-yellow-400 rounded-full animate-spin"></div>
                                         <span className="text-gray-600">Loading blogs...</span>
                                     </div>
                                 </div>
@@ -700,7 +706,7 @@ const HomePage = () => {
                             topLoading ? (
                                 <div className="col-span-full flex justify-center py-8">
                                     <div className="flex items-center gap-2">
-                                        <div className="w-6 h-6 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
+                                        <div className="w-6 h-6 border-2 border-gray-300 border-yellow-400 rounded-full animate-spin"></div>
                                         <span className="text-gray-600">Loading blogs...</span>
                                     </div>
                                 </div>

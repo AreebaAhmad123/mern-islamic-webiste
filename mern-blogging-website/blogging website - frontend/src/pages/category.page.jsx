@@ -43,7 +43,7 @@ const CategoryPage = () => {
       <h2 className="text-2xl font-semibold mb-4">
         Category: <span className="text-yellow-500">{category}</span>
         {tag && (
-          <span className="ml-4">Tag: <span className="text-blue-500">{tag}</span></span>
+          <span className="ml-4">Tag: <span className="text-yellow-300">{tag}</span></span>
         )}
       </h2>
       {loading ? (

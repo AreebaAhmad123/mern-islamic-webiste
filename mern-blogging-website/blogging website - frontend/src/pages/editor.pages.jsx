@@ -261,7 +261,14 @@ const Editor = () => {
     return (
         <EditorErrorBoundary>
             <EditorContext.Provider value={{ blog, setBlog, editorState, setEditorState, textEditor, setTextEditor }}>
-                {editorState === "editor" ? <BlogEditor /> : <PublishForm />}
+                <div className="editor-page">
+                    {
+                        !access_token ? <Navigate to="/login" />
+                            : loading ? <Loader />
+                                :
+                                editorState == "editor" ? <BlogEditor /> : <PublishForm />
+                    }
+                </div>
             </EditorContext.Provider>
         </EditorErrorBoundary>
     );

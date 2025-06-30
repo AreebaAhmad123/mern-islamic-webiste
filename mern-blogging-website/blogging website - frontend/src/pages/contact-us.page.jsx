@@ -50,15 +50,15 @@ const ContactUsPage = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm text-gray-700 mb-1">Subject</label>
-              <input name="subject" value={form.subject} onChange={handleChange} type="text" className="w-full rounded-md border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400 placeholder-gray-100" placeholder="Subject" />
+              <input name="subject" value={form.subject} onChange={handleChange} type="text" className="w-full rounded-md border border-gray-200 bg-grey px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400 placeholder-gray-100" placeholder="Subject" />
             </div>
             <div>
               <label className="block text-sm text-gray-700 mb-1">Name</label>
-              <input name="name" value={form.name} onChange={handleChange} type="text" className="w-full rounded-md border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400 placeholder-gray-100" placeholder="Name" />
+              <input name="name" value={form.name} onChange={handleChange} type="text" className="w-full rounded-md border border-gray-200 bg-grey px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400 placeholder-gray-100" placeholder="Name" />
             </div>
             <div>
               <label className="block text-sm text-gray-700 mb-1">Email</label>
-              <input name="email" value={form.email} onChange={handleChange} type="email" className="w-full rounded-md border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400 placeholder-gray-100" placeholder="Email" />
+              <input name="email" value={form.email} onChange={handleChange} type="email" className="w-full rounded-md border border-gray-200 bg-grey px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400 placeholder-gray-100" placeholder="Email" />
             </div>
           </div>
 

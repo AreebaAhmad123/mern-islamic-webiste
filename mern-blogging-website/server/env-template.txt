@@ -13,4 +13,7 @@ CLOUDINARY_API_SECRET=your_cloudinary_api_secret
 PORT=3000
 
 # Node Environment
-NODE_ENV=development 
+NODE_ENV=development
+
+# Google OAuth Client ID
+GOOGLE_CLIENT_ID=your_google_client_id_here 

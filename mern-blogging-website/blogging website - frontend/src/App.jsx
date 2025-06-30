@@ -51,10 +51,10 @@ const App = () => {
       <UserContext.Provider value={{ userAuth, setUserAuth }}>
         <FooterContext.Provider value={{ blogImages, setBlogImages, categories, setCategories }}>
           <Routes>
-            <Route path="/editor" element={<Editor />} />
-            <Route path="/editor/:blog_id" element={<Editor />} />
             <Route path="/" element={<Navbar />}>
               <Route index element={<HomePage />} />
+              <Route path="editor" element={<Editor />} />
+              <Route path="editor/:blog_id" element={<Editor />} />
               <Route path="dashboard" element={<SideNav />}>
                 <Route path="blogs" element={<ManageBlogs />} />
                 <Route path="notification" element={<Notifications />} />

@@ -57,7 +57,7 @@ const CommentField = ({ action, type = "Comment" }) => {
         return (
             <div className="bg-gray-50 p-4 rounded-lg text-center">
                 <p className="text-gray-600 mb-2">Please log in to leave a comment</p>
-                <Link to="/login" className="text-blue-500 hover:text-blue-600 font-medium">
+                <Link to="/login" className="text-yellow-300 hover:text-yellow-400 font-medium">
                     Login to Comment
                 </Link>
             </div>
@@ -79,7 +79,7 @@ const CommentField = ({ action, type = "Comment" }) => {
                             value={comment}
                             onChange={(e) => setComment(e.target.value)}
                             placeholder={`Share your thoughts on this story...`}
-                            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-300 focus:border-transparent resize-none"
                             rows="3"
                             disabled={isSubmitting}
                             maxLength={500}
@@ -93,7 +93,7 @@ const CommentField = ({ action, type = "Comment" }) => {
                             <button
                                 type="submit"
                                 disabled={!comment.trim() || isSubmitting || comment.length > 500}
-                                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                className="px-4 py-2 bg-yellow-300 text-white rounded-lg hover:bg-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-300 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                             >
                                 {isSubmitting ? 'Posting...' : `Post ${type}`}
                             </button>

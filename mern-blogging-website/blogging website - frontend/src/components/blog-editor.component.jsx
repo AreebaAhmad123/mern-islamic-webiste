@@ -718,7 +718,7 @@ const BlogEditor = () => {
             <div className="flex items-center gap-2 text-sm text-gray-600">
               {autoSaveStatus === 'saving' && (
                 <span className="flex items-center gap-1">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                  <div className="w-2 h-2 bg-yellow-300 rounded-full animate-pulse"></div>
                   Auto-saving...
                 </span>
               )}
@@ -769,7 +769,7 @@ const BlogEditor = () => {
             </div>
             <textarea
               placeholder="Blog Title"
-              className="text-4xl font-medium w-full h-20 outline-none resize-none mt-10 leading-tight placeholder:opacity-40"
+              className="text-4xl font-medium w-full h-20 outline-none rounded-lg p-4 bg-gray-50 resize-none mt-10 leading-tight placeholder:opacity-40"
               value={title}
               onChange={handleTitleChange}
               onKeyDown={handleTitleKeyDown}
@@ -781,7 +781,7 @@ const BlogEditor = () => {
             <textarea
               value={des}
               placeholder="Blog Description"
-              className="text-base sm:text-lg w-full h-20 outline-none resize-none mt-4 leading-tight placeholder:opacity-40"
+              className="text-base sm:text-lg w-full h-20 outline-none bg-gray-50 rounded-lg p-4 resize-none mt-4 leading-tight placeholder:opacity-40"
               onChange={handleDescriptionChange}
               maxLength={200}
             />
@@ -815,7 +815,7 @@ const BlogEditor = () => {
                 value={tagInput}
                 onChange={handleTagInputChange}
                 onKeyDown={handleTagKeyDown}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm sm:text-base"
+                className="w-full px-4 py-2 border  rounded-lg bg-gray-50 focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 outline-none text-sm sm:text-base"
                 maxLength={20}
               />
               <div className="text-right text-sm text-gray-500 mt-1">

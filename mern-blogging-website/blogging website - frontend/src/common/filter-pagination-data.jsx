@@ -23,6 +23,7 @@ export const filterPaginationData = async ({
           ...state,
           results: [...state.results, ...data],
           page: page,
+          totalDocs: state.totalDocs
         };
       } else {
         console.log('Creating new state, fetching count from:', countRoute);

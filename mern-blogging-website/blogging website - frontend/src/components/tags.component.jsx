@@ -33,17 +33,17 @@ const Tags = ({ tags, setTags, maxTags = 10 }) => {
                 Tags ({tags.length}/{maxTags})
             </label>
             
-            <div className="flex flex-wrap gap-2 min-h-[40px] p-2 border border-gray-300 rounded-lg focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent">
+            <div className="flex flex-wrap gap-2 min-h-[40px] p-2 border border-gray-300 rounded-lg focus-within:ring-2 focus-within:ring-yellow-300 focus-within:border-transparent">
                 {tags.map((tag, index) => (
                     <span
                         key={index}
-                        className="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-800 text-sm rounded-full"
+                        className="inline-flex items-center px-2 py-1 bg-yellow-300 text-yellow-400 text-sm rounded-full"
                     >
                         {tag}
                         <button
                             type="button"
                             onClick={() => removeTag(tag)}
-                            className="ml-1 text-blue-600 hover:text-blue-800 focus:outline-none"
+                            className="ml-1 text-yellow-300 hover:text-yellow-400 focus:outline-none"
                         >
                             ×
                         </button>

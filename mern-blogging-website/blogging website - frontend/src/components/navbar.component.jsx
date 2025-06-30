@@ -113,8 +113,8 @@ const Navbar = () => {
 
   return (
     <>
-      <nav className="navbar flex items-center justify-between z-50">
-        <Link to="/" className="text-2xl font-bold text-[#185d4e] shrink-0">
+      <nav className="navbar flex items-center justify-between z-50 mb-2">
+        <Link to="/" className="text-2xl font-bold text-[#185d4e] shrink-0 logo-text">
           IslamicStories
         </Link>
 
@@ -160,6 +160,17 @@ const Navbar = () => {
 
         {/* Desktop Auth/Profile */}
         <div className="flex items-center gap-5 shrink-0">
+          <button
+              className="w-12 h-12 rounded-full bg-grey relative hover:bg-black/10 dark-hover flex items-center justify-center hidden md:flex"
+              onClick={handleThemeToggle}
+              aria-label="Toggle theme"
+            >
+              {theme === "dark" ? (
+                <i className="fi fi-rr-sun text-xl "></i>
+              ) : (
+                <i className="fi fi-rr-moon-stars text-xl"></i>
+              )}
+            </button>
           {access_token ? (
             <>
               {userAuth?.isAdmin ? (
@@ -167,19 +178,8 @@ const Navbar = () => {
                   <i className="fi fi-rr-file-edit text-sm pt-2 -ml-2"></i> Write
                 </Link>
               ) : null}
-              <button
-                className="w-12 h-12 rounded-full bg-grey relative hover:bg-black/10 flex items-center justify-center hidden md:flex"
-                onClick={handleThemeToggle}
-                aria-label="Toggle theme"
-              >
-                {theme === "dark" ? (
-                  <i className="fi fi-rr-sun text-xl "></i>
-                ) : (
-                  <i className="fi fi-rr-moon-stars text-xl"></i>
-                )}
-              </button>
               <Link to="/dashboard/notification" className="hidden md:block">
-                <button className="w-12 h-12 rounded-full bg-grey relative hover:bg-black/10">
+                <button className="w-12 h-12 rounded-full bg-grey relative hover:bg-black/10 dark-hover">
                   <i className="fi fi-rr-bell text-2xl block mt-1"></i>
                   {new_notification_available ? (
                     <span className="bg-red w-3 h-3 rounded-full absolute z-10 top-2 right-2"></span>
@@ -220,6 +220,17 @@ const Navbar = () => {
           >
             <i className="fi fi-rr-search text-xl"></i>
           </button>
+          <button
+              className="w-12 h-12 rounded-full bg-grey relative hover:bg-black/10 dark-hover flex items-center justify-center md:hidden"
+              onClick={handleThemeToggle}
+              aria-label="Toggle theme"
+            >
+              {theme === "dark" ? (
+                <i className="fi fi-rr-sun text-xl "></i>
+              ) : (
+                <i className="fi fi-rr-moon-stars text-xl"></i>
+              )}
+            </button>
           {access_token && userAuth?.isAdmin ? (
             <Link to="/editor" className="md:hidden">
               <i className="fi fi-rr-file-edit "></i>
@@ -253,18 +264,6 @@ const Navbar = () => {
               </div>
             </>
           )}
-          {/* Theme Toggle Button (Mobile) */}
-          <button
-            className="md:hidden bg-gray-100 w-12 h-12 rounded-full flex items-center justify-center"
-            onClick={handleThemeToggle}
-            aria-label="Toggle theme"
-          >
-            {theme === "dark" ? (
-              <i className="fi fi-rr-sun text-xl"></i>
-            ) : (
-              <i className="fi fi-rr-moon-stars text-xl"></i>
-            )}
-          </button>
           {/* Menu Button */}
           <button
             className="md:hidden "
@@ -338,7 +337,7 @@ const Navbar = () => {
       {/* Desktop Search */}
       {
         shouldShowSearch && (
-          <div className="search hidden lg:block md:block">
+          <div className="search hidden lg:block md:block py-2">
             <input
               type="text"
               placeholder="Search"

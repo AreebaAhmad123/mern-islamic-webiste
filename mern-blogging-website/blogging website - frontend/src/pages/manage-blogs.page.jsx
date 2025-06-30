@@ -66,10 +66,25 @@ export const ManageBlogs = () => {
 
             console.log(`Formatted ${draft ? 'drafts' : 'blogs'} data:`, formattedData);
 
-            if (draft) {
-                setDrafts(formattedData);
+            // Append results if loading more pages
+            if (page > 1) {
+                if (draft) {
+                    setDrafts(prev => ({
+                        ...formattedData,
+                        results: [...(prev?.results || []), ...(formattedData.results || [])]
+                    }));
+                } else {
+                    setBlogs(prev => ({
+                        ...formattedData,
+                        results: [...(prev?.results || []), ...(formattedData.results || [])]
+                    }));
+                }
             } else {
-                setBlogs(formattedData);
+                if (draft) {
+                    setDrafts(formattedData);
+                } else {
+                    setBlogs(formattedData);
+                }
             }
         } catch (err) {
             console.error(`Error fetching ${draft ? 'drafts' : 'published blogs'}:`, err);
@@ -175,24 +190,15 @@ export const ManageBlogs = () => {
 
     return (
         <>
-            <h1 className="max-md:hidden">Manage Blogs</h1>
             <Toaster />
             
-            {/* Debug button */}
-            <div className="mb-4">
-                <button 
-                    onClick={debugDrafts}
-                    className="btn-dark px-4 py-2 text-sm"
-                >
-                    Debug Drafts
-                </button>
-            </div>
+           
             
             {/* Authentication check */}
             {!access_token && (
                 <div className="text-center py-8">
                     <p className="text-red-500 mb-2">Please log in to view your blogs</p>
-                    <Link to="/login" className="text-blue-500 hover:text-blue-600">
+                    <Link to="/login" className="text-yellow-300 hover:text-yellow-500">
                         Go to Login
                     </Link>
                 </div>
@@ -200,17 +206,7 @@ export const ManageBlogs = () => {
             
             {access_token && (
                 <>
-                    <div className="relative max-md:mt-5 md:mt-8 mb-10">
-                        <input
-                            type="search"
-                            className="w-full bg-grey p-4 pl-12 pr-6 rounded-full
-                            placeholder:text-dark-grey"
-                            placeholder="Search Blogs"
-                            onChange={handleChange}
-                            onKeyDown={handleSearch}
-                        />
-                        <i className="fi fi-rr-search absolute right-[18%] md:pointer-events-none md:left-5 top-1/2 -translate-y-1/2 text-xl text-dark-grey"></i>
-                    </div>
+                    
                     <InPageNavigation routes={["Published Blogs", "Drafts"]} defaultActiveIndex={activeTab != 'draft' ? 0 : 1}>
                         {/* published Blogs */}
                         {loading.blogs ? (
@@ -220,7 +216,7 @@ export const ManageBlogs = () => {
                                 <p className="text-red-500 mb-2">{error.blogs}</p>
                                 <button 
                                     onClick={() => retryLoad('blogs')}
-                                    className="text-blue-500 hover:text-blue-600"
+                                    className="text-yellow-400 hover:text-yellow-500"
                                 >
                                     Try again
                                 </button>
@@ -237,11 +233,14 @@ export const ManageBlogs = () => {
                                         </AnimationWrapper>
                                     );
                                 })}
-                                <LoadMoreDataBtn
-                                    State={blogs}
-                                    fetchDataFunc={getBlogs}
-                                    additionalParam={{ draft: false, deletedDocCount: blogs.deletedDocCount }}
-                                />
+                                {/* Use LoadMoreDataBtn for published blogs */}
+                                <div className="flex justify-center mt-4">
+                                    <LoadMoreDataBtn
+                                        state={blogs}
+                                        fetchDataFun={({ page }) => getBlogs({ page, draft: false })}
+                                        additionalParam={{ page: (blogs.page || 1) + 1, draft: false }}
+                                    />
+                                </div>
                             </>
                         ) : (
                             <NoDataMessage message="No published blogs" />
@@ -254,7 +253,7 @@ export const ManageBlogs = () => {
                                 <p className="text-red-500 mb-2">{error.drafts}</p>
                                 <button 
                                     onClick={() => retryLoad('drafts')}
-                                    className="text-blue-500 hover:text-blue-600"
+                                    className="text-yellow-300 hover:text-yellow-400"
                                 >
                                     Try again
                                 </button>
@@ -268,11 +267,14 @@ export const ManageBlogs = () => {
                                         <ManageDraftBlogPost blog={{ ...blog, index: i, setStateFunc: setDrafts }} index={i} />
                                     </AnimationWrapper>
                                 ))}
-                                <LoadMoreDataBtn
-                                    State={drafts}
-                                    fetchDataFunc={getBlogs}
-                                    additionalParam={{ draft: true, deletedDocCount: drafts.deletedDocCount }}
-                                />
+                                {/* Use LoadMoreDataBtn for drafts */}
+                                <div className="flex justify-center mt-4">
+                                    <LoadMoreDataBtn
+                                        state={drafts}
+                                        fetchDataFun={({ page }) => getBlogs({ page, draft: true })}
+                                        additionalParam={{ page: (drafts.page || 1) + 1, draft: true }}
+                                    />
+                                </div>
                             </>
                         ) : (
                             <NoDataMessage message="No draft blogs" />

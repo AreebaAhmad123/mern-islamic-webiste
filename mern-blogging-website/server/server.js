@@ -12,6 +12,7 @@ import path from 'path';
 import fs from 'fs';
 import { google } from 'googleapis';
 import { v2 as cloudinary } from 'cloudinary';
+import { OAuth2Client } from 'google-auth-library';
 
 //schema
 import User from './Schema/User.js'
@@ -143,7 +144,8 @@ server.post("/signup", (req, res) => {
         let username = await generateUsername(email);
 
         let user = new User({
-            personal_info: { firstname, lastname, fullname, email, password: hashed_password, username }
+            personal_info: { firstname, lastname, fullname, email, password: hashed_password, username },
+            google_auth: false
         });
 
         user.save().then(async (u) => {
@@ -179,6 +181,11 @@ server.post("/login", async (req, res) => {
         const user = await User.findOne({ "personal_info.email": email });
         if (!user) {
             return res.status(403).json({ error: "Email not found" });
+        }
+
+        // Prevent Google-auth users from logging in with password
+        if (user.google_auth) {
+            return res.status(403).json({ error: "This account was created with Google. Please use Google sign-in." });
         }
 
         const passwordMatch = await bcrypt.compare(password, user.personal_info.password);
@@ -1340,6 +1347,71 @@ server.get("/new-notification", verifyJWT, async (req, res) => {
     } catch (err) {
         console.error("Error checking notifications:", err);
         return res.status(500).json({ error: "Failed to check notifications" });
+    }
+});
+
+server.post('/google-auth', async (req, res) => {
+    console.log("Attempting Google Auth...");
+    console.log("GOOGLE_CLIENT_ID from env:", process.env.GOOGLE_CLIENT_ID);
+    try {
+        const { id_token } = req.body;
+        console.log("Received ID token:", id_token);
+        const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+        // Decode token without verifying to inspect payload
+        const base64Payload = id_token.split('.')[1];
+        const decodedPayload = JSON.parse(Buffer.from(base64Payload, 'base64').toString('utf-8'));
+        console.log("Decoded token audience (aud):", decodedPayload.aud);
+        console.log("Decoded token full payload:", decodedPayload);
+
+        const ticket = await client.verifyIdToken({
+            idToken: id_token,
+            audience: process.env.GOOGLE_CLIENT_ID,
+        });
+
+        const payload = ticket.getPayload();
+        const email = payload.email;
+        const picture = payload.picture;
+        // Fallbacks for missing fields
+        const name = payload.name || email.split('@')[0];
+        const given_name = payload.given_name || name.split(' ')[0] || name;
+        const family_name = payload.family_name || name.split(' ')[1] || 'GoogleUser';
+
+        let user = await User.findOne({ "personal_info.email": email });
+
+        if (user) {
+            if (!user.google_auth) {
+                return res.status(403).json({ error: "This email was signed up without Google. Please log in with a password to access the account." });
+            }
+        } else {
+            const username = await generateUsername(email);
+            user = new User({
+                personal_info: {
+                    fullname: name,
+                    firstname: given_name,
+                    lastname: family_name,
+                    email,
+                    profile_img: picture,
+                    username
+                },
+                google_auth: true
+            });
+            await user.save();
+            // Notify all admins about new user registration
+            const admins = await User.find({ admin: true });
+            for (const admin of admins) {
+                await new Notification({
+                    type: 'new_user',
+                    notification_for: admin._id,
+                    for_role: 'admin',
+                    user: user._id
+                }).save();
+            }
+        }
+        return res.status(200).json(formatDatatoSend(user));
+    } catch (err) {
+        console.error('Google auth error:', err);
+        return res.status(500).json({ error: "Failed to authenticate with Google. Try again with another account." });
     }
 });
 

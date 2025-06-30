@@ -1,6 +1,6 @@
 import { Toaster, toast } from "react-hot-toast";
 import AnimationWrapper from "../common/page-animation";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useContext, useEffect, useState } from "react";
 import { EditorContext } from "../pages/editor.pages.jsx";
 import { UserContext } from "../App";
@@ -9,6 +9,7 @@ import { lookInSession } from "../common/session";
 
 const PublishForm = () => {
   const navigate = useNavigate();
+  const { blogId } = useParams();
   const characterLimit = 200;
   const { blog = {}, setBlog, setEditorState } = useContext(EditorContext);
   const { userAuth } = useContext(UserContext);
@@ -16,6 +17,7 @@ const PublishForm = () => {
   const [tagInput, setTagInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
+  const isEditing = !!(blog?.blog_id || blogId);
 
   // Initialize tags from blog data
   useEffect(() => {
@@ -98,25 +100,42 @@ const PublishForm = () => {
         title: blog.title.trim(),
         des: blog.des.trim(),
         banner: blog.banner?.trim() || "",
-        content: Array.isArray(blog.content) ? blog.content[0] : blog.content,
+        content: Array.isArray(blog.content) ? blog.content : [blog.content],
         tags: blog.tags.map(tag => tag.trim().toLowerCase()),
         draft: false,
-        id: blog.blog_id
+        id: blog.blog_id || blogId || undefined
       };
       
       console.log("Prepared blog data for publishing:", blogData);
 
-      const response = await axios.post(
-        `${import.meta.env.VITE_SERVER_DOMAIN}/create-blog`,
-        blogData,
-        {
-          headers: {
-            'Authorization': `Bearer ${access_token}`,
-            'Content-Type': 'application/json'
-          },
-          timeout: 15000 // 15 second timeout for publishing
-        }
-      );
+      let response;
+      if (isEditing) {
+        // Update existing blog (publish draft)
+        response = await axios.put(
+          `${import.meta.env.VITE_SERVER_DOMAIN}/update-blog/${blog.blog_id || blogId}`,
+          blogData,
+          {
+            headers: {
+              'Authorization': `Bearer ${access_token}`,
+              'Content-Type': 'application/json'
+            },
+            timeout: 15000
+          }
+        );
+      } else {
+        // Create new blog
+        response = await axios.post(
+          `${import.meta.env.VITE_SERVER_DOMAIN}/create-blog`,
+          blogData,
+          {
+            headers: {
+              'Authorization': `Bearer ${access_token}`,
+              'Content-Type': 'application/json'
+            },
+            timeout: 15000
+          }
+        );
+      }
 
       console.log("Publish response:", response.data);
       toast.dismiss(loadingToast);
@@ -258,7 +277,7 @@ const PublishForm = () => {
 
         <div className="max-w-5xl mx-auto flex flex-col gap-6 sm:gap-8">
           {/* Preview Section */}
-          <div className="bg-white rounded-xl shadow-lg p-6">
+          <div className="bg-white rounded-xl shadow-lg p-6 preview-section">
             <h2 className="text-lg sm:text-xl font-semibold text-gray-700 mb-4">Preview</h2>
             <div className="w-full aspect-video rounded-lg overflow-hidden bg-gray-100">
               <img
@@ -278,7 +297,7 @@ const PublishForm = () => {
               {tags.map((tag) => (
                 <span
                   key={tag}
-                  className="bg-blue-100 text-blue-800 text-sm sm:text-base font-medium px-3 py-1 rounded-full"
+                  className="bg-black text-yellow-300 text-sm sm:text-base font-medium px-3 py-1 rounded-full"
                 >
                   {tag}
                 </span>
@@ -316,7 +335,7 @@ const PublishForm = () => {
                   placeholder="Enter blog title"
                   value={blog.title || ""}
                   onChange={handleBlogTitleChange}
-                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm sm:text-base ${
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 outline-none text-sm sm:text-base ${
                     validationErrors.title ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'
                   }`}
                   disabled={isLoading}
@@ -337,7 +356,7 @@ const PublishForm = () => {
                   placeholder="Write a short description"
                   value={blog.des || ""}
                   onChange={handleDescriptionChange}
-                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none h-24 sm:h-32 resize-none text-sm sm:text-base ${
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 outline-none h-24 sm:h-32 resize-none text-sm sm:text-base ${
                     validationErrors.description ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'
                   }`}
                   disabled={isLoading}
@@ -379,7 +398,7 @@ const PublishForm = () => {
                   value={tagInput}
                   onChange={handleTagInputChange}
                   onKeyDown={handleTagKeyDown}
-                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm sm:text-base ${
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 outline-none text-sm sm:text-base ${
                     validationErrors.tags ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'
                   }`}
                   disabled={isLoading}

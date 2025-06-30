@@ -76,7 +76,7 @@ const Footer = ({ instagramImages, recentComments, categories }) => {
         <div className="flex flex-col sm:flex-row gap-4 bg-gray-100 px-6 rounded-3xl p-4 pb-2 shadow-md max-w-xl mx-auto">
           {/* Mega News + Newsletters */}
           <div className="flex-1 min-w-[180px]">
-            <h3 className="font-semibold text-base mb-1 flex items-center gap-1"><span className="text-yellow-400 text-lg">•</span> Mega News</h3>
+            <h3 className="font-semibold text-base mb-1 flex items-center gap-1"><span className="text-yellow-400 text-lg">•</span> Islamic Stories</h3>
             <p className="text-xs text-gray-500 leading-relaxed mb-2 text-justify">
               Lorem Ipsum Dolor Sit Amet, Consectetur Adipisicing Elit, Sed Do Eiusmod Tempor Incididunt Ut Labore Et Dolore Magna Aliqua. Egestas Purus Viverra Accumsan In Nisi Nisi. Arcu Cursus Vitae Congue Mauris Rhoncus Aenean Vel Elit Scelerisque. In Egestas Erat Imperdiet Sed Euismod Nisi Porta Lorem Molla. Morbi Tristique Senectus Et Netus. Mattis Pellentesque Id Nibh Tortor Id Aliquet Lectus Proin
             </p>
