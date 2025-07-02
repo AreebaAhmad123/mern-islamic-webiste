@@ -13,6 +13,7 @@ import { UserContext } from "../App";
 import { lookInSession } from "../common/session";
 import Sidebar from "../components/sidebar.component";
 import { FiEye, FiMessageCircle, FiTag } from "react-icons/fi";
+import userProfile from "../imgs/user profile.png";
 
 export const BlogContext = createContext({});
 
@@ -35,6 +36,9 @@ const BlogPage = () => {
     const [isLikedByUser, setLikedByUser] = useState(false);
     const [commentsWrapper, setCommentsWrapper] = useState(true);
     const [totalParentCommentsLoaded, setTotalParentCommentsLoaded] = useState(0);
+    const [topPosts, setTopPosts] = useState([]);
+    const [trendingTags, setTrendingTags] = useState([]);
+    const [authorInfo, setAuthorInfo] = useState(null);
 
     const fetchComments = async ({ blog_id, setParentCommentCountFun }) => {
         try {
@@ -96,10 +100,10 @@ const BlogPage = () => {
             setBlog(blog);
             setLikedByUser(likedByUser);
 
-            if (blog && blog._id) {
-                console.log('Fetching comments for blog ID:', blog._id);
+            if (blog && blog.blog_id) {
+                console.log('Fetching comments for blog ID:', blog.blog_id);
                 const comments = await fetchComments({
-                    blog_id: blog._id,
+                    blog_id: blog.blog_id,
                     setParentCommentCountFun: setTotalParentCommentsLoaded
                 });
                 blog.comments = comments;
@@ -140,7 +144,24 @@ const BlogPage = () => {
         setLikedByUser(false);
         setCommentsWrapper(false);
         setTotalParentCommentsLoaded(0);
+        // Only fetch top posts and trending tags here
+        axios.get(import.meta.env.VITE_SERVER_DOMAIN + "/trending-blogs")
+          .then(res => setTopPosts(res.data.blogs))
+          .catch(console.error);
+        axios.get(import.meta.env.VITE_SERVER_DOMAIN + "/trending-tags")
+          .then(res => setTrendingTags(res.data.tags.map(tagObj => tagObj._id)))
+          .catch(console.error);
     }, [blog_id]);
+
+    // Improved dependency for author info fetch
+    useEffect(() => {
+        const username = blog?.author?.personal_info?.username;
+        if (username) {
+            axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/get-profile", { username })
+                .then(res => setAuthorInfo(res.data))
+                .catch(console.error);
+        }
+    }, [blog?.author?.personal_info?.username]);
 
     if (loading) {
         return <Loader />;
@@ -176,7 +197,8 @@ const BlogPage = () => {
                 commentsWrapper, 
                 setCommentsWrapper, 
                 totalParentCommentsLoaded, 
-                setTotalParentCommentsLoaded 
+                setTotalParentCommentsLoaded,
+                fetchBlog
             }}>
                 <div className="flex flex-row gap-8 max-w-6xl mx-auto py-10 max-lg:px-[5vw] items-start">
                     {/* Main Content */}
@@ -186,15 +208,15 @@ const BlogPage = () => {
                         {/* Meta Row */}
                         <div className="flex flex-wrap items-center gap-4 text-gray-500 text-sm mb-6">
                             <div className="flex items-center gap-2">
-                                <img src={profile_img} alt="Author" className="w-10 h-10 rounded-full object-cover" />
+                                <img src={profile_img || userProfile} alt="Author" className="w-10 h-10 rounded-full object-cover" />
                                 <span className="font-medium text-gray-800">{fullname}</span>
                                 <span className="text-gray-400">@{author_username}</span>
                             </div>
                             <span className="hidden sm:block">•</span>
                             <span>Published on {getDay(publishedAt)}</span>
                             <span className="hidden sm:block">•</span>
-                            <span className="flex items-center gap-1"><FiEye className="inline-block" /> {blog.views || 0} Views</span>
-                            <span className="flex items-center gap-1"><FiMessageCircle className="inline-block" /> {blog.activity?.total_parent_comments || 0} Comments</span>
+                            <span className="flex items-center gap-1"><FiEye className="inline-block" /> {blog.activity?.total_reads || 0} Views</span>
+                            <span className="flex items-center gap-1"><FiMessageCircle className="inline-block" /> {blog.activity?.total_comments || 0} Comments</span>
                             {blog.tags && blog.tags.length > 0 && (
                                 <span className="flex items-center gap-1"><FiTag className="inline-block" /> {blog.tags[0]}</span>
                             )}
@@ -212,19 +234,16 @@ const BlogPage = () => {
                             )}
                         </div>
                         {/* Related Posts Section */}
-                        <SimilarBlogs currentBlogId={blog_id} tags={blog.tags || []} />
+                        <SimilarBlogs currentBlogId={blog_id} tags={blog.tags || []} similarBlogs={similarBlogs} />
                         <BlogInteraction />
                     </div>
                     {/* Sidebar */}
                     <div className="hidden lg:flex flex-col w-80 flex-shrink-0 gap-6">
                         <Sidebar
-                            author={{
-                                fullname,
-                                profile_img,
-                                postCount: blog.author?.postCount,
-                            }}
+                            author={authorInfo}
                             tags={blog.tags || []}
-                            topPosts={similarBlogs || []}
+                            topPosts={topPosts}
+                            blogId={blog.blog_id}
                         />
                     </div>
                 </div>

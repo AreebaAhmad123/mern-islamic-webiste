@@ -4,6 +4,7 @@ import { UserContext } from "../App";
 import { BlogContext } from "../pages/blog.page";
 import { Link } from "react-router-dom";
 import AnimationWrapper from "../common/page-animation";
+import { Toaster, toast } from "react-hot-toast";
 
 const CommentField = ({ action, type = "Comment" }) => {
     const [comment, setComment] = useState("");
@@ -14,7 +15,7 @@ const CommentField = ({ action, type = "Comment" }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         
-        if (!comment.trim() || !blog?._id) return;
+        if (!comment.trim() || !blog?.blog_id) return;
         
         setIsSubmitting(true);
         
@@ -22,8 +23,9 @@ const CommentField = ({ action, type = "Comment" }) => {
             const { data } = await axios.post(
                 import.meta.env.VITE_SERVER_DOMAIN + "/add-comment",
                 {
-                    blog_id: blog._id,
-                    comment: comment.trim()
+                    blog_id: blog.blog_id || blog._id,
+                    comment: comment.trim(),
+                    blog_author: blog.author?._id
                 },
                 {
                     headers: {
@@ -43,11 +45,23 @@ const CommentField = ({ action, type = "Comment" }) => {
                 if (!updatedBlog.activity) {
                     updatedBlog.activity = { total_parent_comments: 0 };
                 }
-                updatedBlog.activity.total_parent_comments += 1;
+                
+                // Add the new comment to the comments array
+                if (data.comment && updatedBlog.comments.results) {
+                    updatedBlog.comments.results.unshift(data.comment);
+                }
+                
                 setBlog(updatedBlog);
+                toast.success('Comment posted successfully!');
             }
         } catch (error) {
             console.error('Error submitting comment:', error);
+            // Show user-friendly error message
+            if (error.response?.data?.error) {
+                toast.error('Error posting comment: ' + error.response.data.error);
+            } else {
+                toast.error('Failed to post comment. Please try again.');
+            }
         } finally {
             setIsSubmitting(false);
         }
@@ -65,12 +79,14 @@ const CommentField = ({ action, type = "Comment" }) => {
     }
 
     return (
-        <AnimationWrapper>
-            <form onSubmit={handleSubmit} className="bg-white p-4 rounded-lg border">
+        <>
+            <Toaster />
+            <AnimationWrapper>
+                <form onSubmit={handleSubmit} className="bg-white p-4 rounded-lg border comment-field">
                 <div className="flex items-start space-x-3">
                     <img 
-                        src={userAuth?.profile_img || '/src/imgs/user profile.png'} 
-                        alt="Profile" 
+                        src={userAuth?.personal_info?.profile_img || userAuth?.profile_img || '/src/imgs/user profile.png'} 
+                        alt={userAuth?.personal_info?.fullname || userAuth?.fullname || 'Profile'} 
                         className="w-10 h-10 rounded-full"
                     />
                     
@@ -102,6 +118,7 @@ const CommentField = ({ action, type = "Comment" }) => {
                 </div>
             </form>
         </AnimationWrapper>
+        </>
     );
 };
 

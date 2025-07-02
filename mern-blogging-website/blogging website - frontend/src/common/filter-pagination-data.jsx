@@ -6,6 +6,7 @@ export const filterPaginationData = async ({
     page,
     countRoute,
     data_to_send = {},
+    user = null,
   }) => {
     try {
       console.log('filterPaginationData called with:', {
@@ -27,10 +28,16 @@ export const filterPaginationData = async ({
         };
       } else {
         console.log('Creating new state, fetching count from:', countRoute);
+        const headers = {};
+        if (user) {
+          headers['Authorization'] = `Bearer ${user}`;
+        }
+        
         const { data: countData } = await axios.post(
           import.meta.env.VITE_SERVER_DOMAIN + countRoute,
           data_to_send,
           {
+            headers,
             timeout: 10000 // 10 second timeout
           }
         );

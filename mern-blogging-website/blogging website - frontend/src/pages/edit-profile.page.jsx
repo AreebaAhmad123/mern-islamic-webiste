@@ -8,6 +8,7 @@ import InputBox from "../components/input.component";
 import AnimationWrapper from "../common/page-animation";
 import { storeInSession } from "../common/session";
 import { uploadImage } from "../common/cloudinary";
+import { updateUserAuth } from "../common/auth";
 
 const EditProfile = () => {
     let { userAuth, userAuth: { access_token }, setUserAuth } = useContext(UserContext);
@@ -96,8 +97,7 @@ const EditProfile = () => {
                     })
                         .then(({ data }) => {
                             let newUserAuth = { ...userAuth, profile_img: data.profile_img };
-                            storeInSession("user", JSON.stringify(newUserAuth));
-                            setUserAuth(newUserAuth);
+                            updateUserAuth(newUserAuth, setUserAuth);
                             setUpdatedProfileImg(null);
                             setRefreshTrigger(prev => prev + 1);
                             toast.dismiss(loadingToast);
@@ -166,13 +166,11 @@ const EditProfile = () => {
             .then(({ data }) => {
                 if (userAuth.username !== data.username) {
                     let newUserAuth = { ...userAuth, username: data.username, email: data.email };
-                    storeInSession("user", JSON.stringify(newUserAuth));
-                    setUserAuth(newUserAuth);
+                    updateUserAuth(newUserAuth, setUserAuth);
                     setCurrentUsername(data.username);
                 } else if (userAuth.email !== data.email) {
                     let newUserAuth = { ...userAuth, email: data.email };
-                    storeInSession("user", JSON.stringify(newUserAuth));
-                    setUserAuth(newUserAuth);
+                    updateUserAuth(newUserAuth, setUserAuth);
                 }
                 setRefreshTrigger(prev => prev + 1);
                 toast.dismiss(loadingToast);

@@ -32,6 +32,9 @@ const BlogEditor = () => {
   const [autoSaveStatus, setAutoSaveStatus] = useState('idle'); // 'idle', 'saving', 'saved', 'error'
   const [saveError, setSaveError] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [isAutoSaving, setIsAutoSaving] = useState(false);
+  const [localStateInitialized, setLocalStateInitialized] = useState(false);
+  const [hasUserEdited, setHasUserEdited] = useState(false);
   const editorRef = useRef(null);
   const textEditorRef = useRef(null);
   const navigate = useNavigate();
@@ -42,6 +45,49 @@ const BlogEditor = () => {
   const [editorReady, setEditorReady] = useState(false);
   const [contentLoaded, setContentLoaded] = useState(false);
   const autoSaveTimeoutRef = useRef(null);
+
+  // Helper function to get the correct blog ID
+  const getBlogId = () => {
+    return blog?.blog_id || blogId || null;
+  };
+
+  // Helper function to normalize content structure
+  const normalizeContent = (content) => {
+    if (!content) {
+      return [{ time: Date.now(), blocks: [], version: '2.27.2' }];
+    }
+    
+    if (Array.isArray(content)) {
+      return content.map(item => ({
+        time: item?.time || Date.now(),
+        blocks: Array.isArray(item?.blocks) ? item.blocks : [],
+        version: item?.version || '2.27.2'
+      }));
+    }
+    
+    if (typeof content === 'object' && content !== null) {
+      return [{
+        time: content.time || Date.now(),
+        blocks: Array.isArray(content.blocks) ? content.blocks : [],
+        version: content.version || '2.27.2'
+      }];
+    }
+    
+    return [{ time: Date.now(), blocks: [], version: '2.27.2' }];
+  };
+
+  // Helper function to manage session storage
+  const clearSessionDraft = () => {
+    sessionStorage.removeItem("blog_draft");
+  };
+
+  const saveToSessionDraft = (blogData) => {
+    try {
+      sessionStorage.setItem("blog_draft", JSON.stringify(blogData));
+    } catch (error) {
+      console.warn("Failed to save to sessionStorage:", error);
+    }
+  };
 
   // Auth check and show toast before navigating
   useEffect(() => {
@@ -60,22 +106,24 @@ const BlogEditor = () => {
     }
   }, [blogId]);
 
-  // Initialize local state from blog context on mount or when blog changes
+  // Refactored local state initialization from context
   useEffect(() => {
-    if (blog) {
+    if (blog && !hasUserEdited) {
       setTitle(blog.title || "");
       setBanner(blog.banner || "");
       setDes(blog.des || "");
       setTags(blog.tags || []);
+      setLocalStateInitialized(true);
     }
-  }, [blog]);
+  }, [blog, hasUserEdited]);
 
   // Debounced auto-save function
   const debouncedAutoSave = useCallback(async () => {
-    if (!authChecked || !blog?.blog_id || isSaving) return;
+    if (!authChecked || !blog?.blog_id || isSaving || isAutoSaving) return;
     
     setAutoSaveStatus('saving');
     setSaveError(null);
+    setIsAutoSaving(true);
     
     try {
       let content = null;
@@ -102,21 +150,28 @@ const BlogEditor = () => {
         return;
       }
 
+      // Get current values from state (not closure)
+      const currentTitle = title;
+      const currentBanner = banner;
+      const currentDes = des;
+      const currentTags = tags;
+
       // Only auto-save if there's actual content
-      const hasContent = title.trim() || des.trim() || (content.blocks && content.blocks.length > 0);
+      const hasContent = currentTitle.trim() || currentDes.trim() || (content.blocks && content.blocks.length > 0);
       if (!hasContent) {
         setAutoSaveStatus('idle');
+        setIsAutoSaving(false);
         return;
       }
 
       const blogObj = {
-        title: title.trim() || "Untitled Draft",
-        banner: banner.trim() || "",
-        des: des.trim() || "",
-        content: [content],
-        tags: tags.map(tag => tag.trim().toLowerCase()).filter(tag => tag.length > 0),
+        title: currentTitle.trim() || "Untitled Draft",
+        banner: currentBanner.trim() || "",
+        des: currentDes.trim() || "",
+        content: normalizeContent(content),
+        tags: currentTags.map(tag => tag.trim().toLowerCase()).filter(tag => tag.length > 0),
         draft: true,
-        id: blog.blog_id
+        id: getBlogId()
       };
 
       const response = await axios.post(
@@ -134,6 +189,7 @@ const BlogEditor = () => {
       setLastSaved(new Date());
       setAutoSaveStatus('saved');
       setSaveError(null);
+      setIsAutoSaving(false);
       console.log("Auto-save completed successfully");
       
       // Reset status after 3 seconds
@@ -158,30 +214,10 @@ const BlogEditor = () => {
       setTimeout(() => {
         setAutoSaveStatus('idle');
         setSaveError(null);
+        setIsAutoSaving(false);
       }, 5000);
     }
-  }, [authChecked, blog?.blog_id, title, banner, des, tags, access_token, isSaving]);
-
-  // Auto-save on content changes (debounced)
-  useEffect(() => {
-    if (!authChecked || !blog?.blog_id) return;
-    
-    // Clear existing timeout
-    if (autoSaveTimeoutRef.current) {
-      clearTimeout(autoSaveTimeoutRef.current);
-    }
-    
-    // Set new timeout for auto-save
-    autoSaveTimeoutRef.current = setTimeout(() => {
-      debouncedAutoSave();
-    }, 30000); // 30 seconds debounce
-
-    return () => {
-      if (autoSaveTimeoutRef.current) {
-        clearTimeout(autoSaveTimeoutRef.current);
-      }
-    };
-  }, [debouncedAutoSave, authChecked, blog?.blog_id]);
+  }, [authChecked, blog?.blog_id, access_token, isSaving, isAutoSaving]);
 
   // Initialize EditorJS only once
   useEffect(() => {
@@ -208,21 +244,21 @@ const BlogEditor = () => {
     // Validate that EditorJS is properly imported
     if (typeof EditorJS !== 'function') {
       console.error("EditorJS is not properly imported");
-      toast.error("Editor failed to load. Please refresh the page.");
+      toast.error("Editor failed to load. Please refresh the page or check your internet connection. If the problem persists, contact support.");
       return;
     }
     
     // Validate that tools are properly imported
     if (!tools || typeof tools !== 'object') {
       console.error("Tools are not properly imported");
-      toast.error("Editor tools failed to load. Please refresh the page.");
+      toast.error("Editor tools failed to load. Please refresh the page or check your internet connection. If the problem persists, contact support.");
       return;
     }
     
     // Additional validation for EditorJS constructor
     if (!EditorJS.prototype || !EditorJS.prototype.constructor) {
       console.error("EditorJS constructor is not properly defined");
-      toast.error("Editor constructor failed to load. Please refresh the page.");
+      toast.error("Editor constructor failed to load. Please refresh the page or check your internet connection. If the problem persists, contact support.");
       return;
     }
     
@@ -259,7 +295,7 @@ const BlogEditor = () => {
                 tags,
                 des
               };
-              sessionStorage.setItem("blog_draft", JSON.stringify(blogData));
+              saveToSessionDraft(blogData);
             }
           } catch (error) {
             console.warn("Failed to save to sessionStorage:", error);
@@ -281,15 +317,17 @@ const BlogEditor = () => {
         message: error.message,
         stack: error.stack
       });
-      toast.error("Failed to initialize editor. Please refresh the page.");
+      toast.error("Failed to initialize editor. Please refresh the page or check your internet connection. If the problem persists, contact support.");
     }
     
     return () => {
       if (editorRef.current) {
         console.log("Cleaning up editor instance...");
-        editorRef.current.isReady
-          .then(() => editorRef.current.destroy())
-          .catch(() => {});
+        if (editorRef.current.isReady && typeof editorRef.current.isReady.then === 'function') {
+          editorRef.current.isReady.then(() => editorRef.current.destroy()).catch(() => {});
+        } else if (typeof editorRef.current.destroy === 'function') {
+          editorRef.current.destroy();
+        }
         editorRef.current = null;
         setEditorReady(false);
         setContentLoaded(false);
@@ -373,9 +411,13 @@ const BlogEditor = () => {
 
       if (response.data.success === true) {
         const secureUrl = response.data.url;
+        console.log("Banner uploaded successfully:", secureUrl);
         setBanner(secureUrl);
-        setBlog({ ...blog, banner: secureUrl });
+        setHasUserEdited(true);
+        // Update blog context but preserve other local state
+        setBlog(prev => ({ ...prev, banner: secureUrl }));
         toast.success("Banner uploaded successfully! 🎉");
+        scheduleAutoSave();
       } else {
         toast.error("Failed to upload banner image");
       }
@@ -383,7 +425,7 @@ const BlogEditor = () => {
       toast.dismiss(loadingToast);
       console.error("Banner upload error:", error);
       
-      let errorMessage = "Failed to upload banner image";
+      let errorMessage = "Failed to upload banner image. Please check your internet connection or try a different image.";
       if (error.response?.status === 401) {
         errorMessage = "Authentication expired. Please log in again.";
       } else if (error.response?.status === 400) {
@@ -407,16 +449,23 @@ const BlogEditor = () => {
   };
 
   const handleTitleChange = (e) => {
+    console.log("Title changed:", e.target.value);
     setTitle(e.target.value);
+    setHasUserEdited(true);
   };
 
   const handleDescriptionChange = (e) => {
+    console.log("Description changed:", e.target.value);
     setDes(e.target.value);
+    setHasUserEdited(true);
   };
 
   const handleTagInputChange = (e) => {
     setTagInput(e.target.value);
+    setHasUserEdited(true);
   };
+
+  const normalizeTag = tag => tag.trim().toLowerCase();
 
   const handleTagKeyDown = (e) => {
     if (e.key === "Enter" && tagInput.trim()) {
@@ -425,10 +474,11 @@ const BlogEditor = () => {
         toast.error("Maximum 5 tags allowed");
         return;
       }
-      const newTag = tagInput.trim().toLowerCase();
-      if (!tags.map(t => t.trim().toLowerCase()).includes(newTag)) {
+      const newTag = normalizeTag(tagInput);
+      if (!tags.map(normalizeTag).includes(newTag)) {
         setTags([...tags, newTag]);
         setTagInput("");
+        scheduleAutoSave();
       } else {
         toast.error("Duplicate tag");
       }
@@ -436,8 +486,10 @@ const BlogEditor = () => {
   };
 
   const removeTag = (tag) => {
-    const newTags = tags.filter((t) => t !== tag);
+    const normalizedTag = normalizeTag(tag);
+    const newTags = tags.filter((t) => normalizeTag(t) !== normalizedTag);
     setTags(newTags);
+    scheduleAutoSave();
   };
 
   const handleTitleKeyDown = (e) => {
@@ -490,17 +542,15 @@ const BlogEditor = () => {
         des: des.trim() || "",
         content: [content],
         tags: tags.map(tag => tag.trim().toLowerCase()).filter(tag => tag.length > 0),
-        draft: true,
-        id: blog?.blog_id || blogId || null
+        draft: true
       };
 
       // Use different endpoints for new vs existing blogs
-      const url = isEditing 
-        ? `${import.meta.env.VITE_SERVER_DOMAIN}/update-blog/${blogId || blog?.blog_id}`
+      const isUpdate = isEditing && getBlogId();
+      const url = isUpdate 
+        ? `${import.meta.env.VITE_SERVER_DOMAIN}/update-blog/${getBlogId()}`
         : `${import.meta.env.VITE_SERVER_DOMAIN}/create-blog`;
-
-      const method = isEditing ? 'put' : 'post';
-
+      const method = isUpdate ? 'put' : 'post';
       const response = await axios[method](
         url,
         blogObj,
@@ -516,12 +566,13 @@ const BlogEditor = () => {
       toast.dismiss(loadingToast);
       toast.success(isEditing ? "Draft updated successfully! 👍" : "Draft saved successfully! 👍");
       
-      // Update the blog context with the saved draft data
+      // Update the blog context with the saved draft data (but preserve local state)
       if (response.data.blog_id) {
         setBlog(prev => ({
           ...prev,
           blog_id: response.data.blog_id,
-          ...blogObj
+          // Don't update title, banner, des, tags from blogObj to preserve user input
+          content: blogObj.content
         }));
       }
       
@@ -532,7 +583,7 @@ const BlogEditor = () => {
       setTimeout(() => setAutoSaveStatus('idle'), 3000);
       
       // Clear session storage draft since it's now saved to database
-      sessionStorage.removeItem("blog_draft");
+      clearSessionDraft();
       
       setTimeout(() => {
         navigate("/dashboard/blogs?tab=draft");
@@ -614,13 +665,22 @@ const BlogEditor = () => {
         }],
         tags: tags.map(tag => tag.trim().toLowerCase()),
         des: des.trim(),
-        id: blog?.blog_id || blogId || null
+        id: getBlogId()
       };
       
       console.log("Setting blog data for publish form:", blogData);
-      setBlog(blogData);
+      // Update blog context for publish form but preserve local state
+      setBlog(prev => ({
+        ...prev,
+        ...blogData,
+        // Keep the current local state values
+        title: title.trim(),
+        banner: banner.trim(),
+        des: des.trim(),
+        tags: tags.map(tag => tag.trim().toLowerCase())
+      }));
       setEditorState("publish");
-      sessionStorage.setItem("blog_draft", JSON.stringify(blogData));
+      saveToSessionDraft(blogData);
       sessionStorage.setItem("refresh_drafts", "1");
     } catch (err) {
       console.error("Error in handlePublishEvent:", err);
@@ -644,52 +704,10 @@ const BlogEditor = () => {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isSaving]);
 
-  // If blog is null, show error and do not render editor
-  if (blog === null) {
-    return <div style={{textAlign: 'center', marginTop: '3rem', color: 'red', fontSize: '1.5rem'}}>Blog not found or you do not have permission to edit this blog.</div>;
+  // Place this after all hooks and before the return statement
+  if (!authChecked || !blog) {
+    return <div style={{textAlign: 'center', marginTop: '3rem'}}>Loading editor...</div>;
   }
-  // Offer to restore draft if blog is null but draft exists in sessionStorage
-  if (!blog && sessionStorage.getItem("blog_draft")) {
-    return (
-      <div style={{textAlign: 'center', marginTop: '3rem'}}>
-        <div style={{color: 'red', fontSize: '1.5rem', marginBottom: '1rem'}}>No blog loaded, but a draft was found in your browser.</div>
-        <div style={{marginBottom: '2rem', color: 'gray'}}>
-          This could be due to a page refresh or navigation. You can restore your work from the saved draft.
-        </div>
-        <div style={{display: 'flex', gap: '1rem', justifyContent: 'center'}}>
-          <button 
-            className="btn-dark px-6 py-3" 
-            onClick={() => {
-              try {
-                const draft = JSON.parse(sessionStorage.getItem("blog_draft"));
-                setBlog(draft);
-                toast.success("Draft restored successfully!");
-              } catch (error) {
-                console.error("Failed to parse draft:", error);
-                toast.error("Failed to restore draft. Starting fresh.");
-                sessionStorage.removeItem("blog_draft");
-                setBlog({});
-              }
-            }}
-          >
-            Restore Draft
-          </button>
-          <button 
-            className="btn-light px-6 py-3" 
-            onClick={() => {
-              sessionStorage.removeItem("blog_draft");
-              setBlog({});
-              toast.success("Starting fresh!");
-            }}
-          >
-            Start Fresh
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (!authChecked) return null;
 
   return (
     <>
@@ -697,9 +715,9 @@ const BlogEditor = () => {
       <Toaster />
       <AnimationWrapper>
         <section className="w-full py-8 px-4 sm:px-6">
-          <div className="flex items-center gap-3 mb-6 sm:mb-8 ml-28">
+          <div className="flex flex-col sm:flex-row items-center gap-3 mb-6 sm:mb-8 ml-0 sm:ml-28">
             <button
-              className="btn-dark py-2 hidden md:block text-sm sm:text-base"
+              className="btn-dark py-2 w-full sm:w-auto text-sm sm:text-base"
               onClick={handleSaveDraft}
               disabled={isSaving}
               title="Save draft (Ctrl+S / Cmd+S)"
@@ -707,10 +725,10 @@ const BlogEditor = () => {
               {isSaving ? "Saving..." : "Save Draft"}
             </button>
             <button
-              className="btn-light py-2 hidden md:block text-sm sm:text-base"
+              className="btn-light py-2 w-full sm:w-auto text-sm sm:text-base"
               onClick={handlePublishEvent}
-              disabled={!title.trim() || !des.trim() || !banner}
-              title={!title.trim() || !des.trim() || !banner ? "Complete all required fields to publish" : "Publish blog"}
+              disabled={!title.trim() || !des.trim() || !banner || isSaving || isAutoSaving}
+              title={!title.trim() || !des.trim() || !banner ? "Complete all required fields to publish" : isSaving || isAutoSaving ? "Please wait for save to complete" : "Publish blog"}
             >
               Publish
             </button>
@@ -741,21 +759,21 @@ const BlogEditor = () => {
               )}
             </div>
           </div>
-          <div className="mx-auto max-w-[900px] w-full">
-            <div className="relative aspect-video hover:opacity-80 bg-white border-l border-gray-200 rounded-lg">
+          <div className="mx-auto max-w-[900px] md:max-w-[700px] w-full">
+            <div className="relative w-full aspect-video hover:opacity-80 bg-white border-l border-gray-200 rounded-lg max-w-full max-h-[300px] md:max-h-[400px] sm:max-h-[500px] overflow-hidden">
               <label htmlFor="uploadBanner">
                 <img
                   src={banner || defaultBanner}
                   alt="Blog banner"
-                  className="w-[500px] h-[500px] object-contain rounded-lg mx-auto bg-white"
+                  className="w-full h-auto max-h-[300px] md:max-h-[400px] sm:max-h-[500px] object-contain rounded-lg mx-auto bg-white transition-all duration-200"
                   onError={handleError}
                 />
                 <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 opacity-0 hover:opacity-100 transition-opacity rounded-lg">
-                  <span className="text-white text-lg">Upload Banner</span>
+                  <span className="text-white text-base md:text-lg">Upload Banner</span>
                 </div>
                 {isUploading && (
                   <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-60 rounded-lg z-10">
-                    <span className="text-white text-lg animate-pulse">Uploading...</span>
+                    <span className="text-white text-base md:text-lg animate-pulse">Uploading...</span>
                   </div>
                 )}
               </label>
@@ -769,34 +787,34 @@ const BlogEditor = () => {
             </div>
             <textarea
               placeholder="Blog Title"
-              className="text-4xl font-medium w-full h-20 outline-none rounded-lg p-4 bg-gray-50 resize-none mt-10 leading-tight placeholder:opacity-40"
+              className="text-2xl md:text-3xl sm:text-4xl font-medium w-full h-16 md:h-18 sm:h-20 outline-none rounded-lg p-3 md:p-4 sm:p-4 bg-gray-50 resize-none mt-6 md:mt-8 sm:mt-10 leading-tight placeholder:opacity-40"
               value={title}
               onChange={handleTitleChange}
               onKeyDown={handleTitleKeyDown}
               maxLength={100}
             ></textarea>
-            <div className="text-right text-sm text-gray-500 mt-1">
+            <div className="text-right text-xs md:text-sm sm:text-sm text-gray-500 mt-1">
               {title.length}/100 characters
             </div>
             <textarea
               value={des}
               placeholder="Blog Description"
-              className="text-base sm:text-lg w-full h-20 outline-none bg-gray-50 rounded-lg p-4 resize-none mt-4 leading-tight placeholder:opacity-40"
+              className="text-sm md:text-base sm:text-lg w-full h-16 md:h-18 sm:h-20 outline-none bg-gray-50 rounded-lg p-3 md:p-4 sm:p-4 resize-none mt-3 md:mt-4 sm:mt-4 leading-tight placeholder:opacity-40"
               onChange={handleDescriptionChange}
               maxLength={200}
             />
-            <div className="text-right text-sm text-gray-500 mt-1">
+            <div className="text-right text-xs md:text-sm sm:text-sm text-gray-500 mt-1">
               {des.length}/200 characters
             </div>
-            <div className="mt-4">
-              <label className="block text-sm sm:text-base font-medium text-gray-700 mb-1">
+            <div className="mt-3 md:mt-4 sm:mt-4">
+              <label className="block text-xs md:text-base sm:text-base font-medium text-gray-700 mb-1">
                 Tags (Press Enter to add, max 5)
               </label>
               <div className="flex flex-wrap gap-2 mb-2">
                 {tags.map((tag, idx) => (
                   <div
                     key={tag + idx}
-                    className="flex items-center bg-gray-100 text-gray-800 text-sm sm:text-base px-3 py-1 rounded-full"
+                    className="flex items-center bg-gray-100 text-gray-800 text-xs md:text-base sm:text-base px-2 md:px-3 sm:px-3 py-1 rounded-full"
                   >
                     {tag}
                     <button
@@ -815,15 +833,15 @@ const BlogEditor = () => {
                 value={tagInput}
                 onChange={handleTagInputChange}
                 onKeyDown={handleTagKeyDown}
-                className="w-full px-4 py-2 border  rounded-lg bg-gray-50 focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 outline-none text-sm sm:text-base"
+                className="w-full px-3 md:px-4 sm:px-4 py-2 border rounded-lg bg-gray-50 focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 outline-none text-xs md:text-base sm:text-base"
                 maxLength={20}
               />
-              <div className="text-right text-sm text-gray-500 mt-1">
+              <div className="text-right text-xs md:text-sm sm:text-sm text-gray-500 mt-1">
                 {tags.length}/5 tags • {tagInput.length}/20 characters
               </div>
             </div>
-            <hr className="w-full opacity-10 my-5" />
-            <div ref={textEditorRef} className="font-gelasio"></div>
+            <hr className="w-full opacity-10 my-4 md:my-5 sm:my-5" />
+            <div ref={textEditorRef} className="font-gelasio overflow-x-auto"></div>
           </div>
         </section>
       </AnimationWrapper>

@@ -1,6 +1,6 @@
 import { useParams } from "react-router-dom";
 import InPageNavigation from "../components/inpage-navigation.component";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useContext } from "react";
 import Loader from "../components/loader.component";
 import AnimationWrapper from "../common/page-animation";
 import BlogPostCard from "../components/blog-post.component";
@@ -9,9 +9,11 @@ import LoadMoreDataBtn from "../components/load-more.component";
 import axios from "axios";
 import { filterPaginationData } from "../common/filter-pagination-data";
 import UserCard from "../components/usercard.component";
+import { UserContext } from "../App";
 
 const SearchPage = () => {
     let { query } = useParams();
+    const { userAuth, setUserAuth } = useContext(UserContext);
 
     let [blogs, setBlogs] = useState(null);
     let [users, setUsers] = useState(null);
@@ -55,6 +57,24 @@ const SearchPage = () => {
         searchBlogs({ page: 1, create_new_arr: true });
     }, [query]);
 
+    const handleLikeToggle = (liked, blog_id) => {
+        setUserAuth((prev) => {
+            if (!prev) return prev;
+            
+            let liked_blogs = prev.liked_blogs || [];
+            
+            if (liked) {
+                if (!liked_blogs.includes(blog_id)) {
+                    liked_blogs = [...liked_blogs, blog_id];
+                }
+            } else {
+                liked_blogs = liked_blogs.filter(id => id !== blog_id);
+            }
+            
+            return { ...prev, liked_blogs };
+        });
+    };
+
     const UserCardWrapper = () => {
         return (
             <>
@@ -80,30 +100,39 @@ const SearchPage = () => {
                     routes={[`Search Results from ${query}`, "Accounts Matched"]} 
                     defaultHidden={["Accounts Matched"]}
                 >
-                    <>
-                        {blogs === null ? (
-                            <Loader />
-                        ) : (
-                            <>
-                                {blogs.results.length ? (
-                                    blogs.results.map((blog, i) => (
-                                        <AnimationWrapper
-                                            key={i}
-                                            transition={{ duration: 1, delay: i * 0.1 }}
-                                        >
-                                            <BlogPostCard
-                                                content={blog}
-                                                author={blog.author.personal_info}
-                                            />
-                                        </AnimationWrapper>
-                                    ))
-                                ) : (
-                                    <NoDataMessage message="No blogs published" />
-                                )}
-                                <LoadMoreDataBtn state={blogs} fetchDataFun={searchBlogs} />
-                            </>
-                        )}
-                    </>
+                    {[
+                        // Tab 1: Blog Results
+                        <>
+                            {blogs === null ? (
+                                <Loader />
+                            ) : (
+                                <>
+                                    {blogs.results.length ? (
+                                        <>
+                                            {blogs.results.map((blog, i) => (
+                                                <AnimationWrapper
+                                                    key={i}
+                                                    transition={{ duration: 1, delay: i * 0.1 }}
+                                                >
+                                                    <BlogPostCard
+                                                        content={blog}
+                                                        author={blog.author.personal_info}
+                                                        liked={userAuth?.liked_blogs?.includes(blog.blog_id)}
+                                                        onLikeToggle={handleLikeToggle}
+                                                    />
+                                                </AnimationWrapper>
+                                            ))}
+                                            <LoadMoreDataBtn state={blogs} fetchDataFun={searchBlogs} />
+                                        </>
+                                    ) : (
+                                        <NoDataMessage message="No blogs published" />
+                                    )}
+                                </>
+                            )}
+                        </>,
+                        // Tab 2: User Results
+                        <UserCardWrapper />
+                    ]}
                 </InPageNavigation>
             </div>
             

@@ -21,6 +21,7 @@ import getDay from "../common/date";
 import PostCard from "../components/PostCard.jsx";
 import { Link } from "react-router-dom";
 import getFullDay from "../common/date";
+import { updateUserAuth } from "../common/auth";
 
 const HomePage = () => {
     let [blogs, setBlog] = useState(null);
@@ -30,6 +31,7 @@ const HomePage = () => {
     const { setBlogImages, setCategories } = useContext(FooterContext);
     const liked_blogs = userAuth?.liked_blogs || [];
     const bookmarked_blogs = userAuth?.bookmarked_blogs || [];
+    const [bookmarking, setBookmarking] = useState(false);
 
     // Pagination state for each section
     const [popularPage, setPopularPage] = useState(1);
@@ -76,14 +78,12 @@ const HomePage = () => {
             ...trendyBlogs,
             ...topBlogs
         ];
-        
-        const images = allBlogs
-            .filter(blog => blog.banner)
-            .map(blog => blog.banner)
-            .slice(0, 6);
-            
+        // Store blog objects (with banner and blog_id) for Instagram section
+        const blogObjs = allBlogs
+            .filter(blog => blog.banner && blog.blog_id)
+            .slice(0, 12);
         if (setBlogImages) {
-            setBlogImages(images);
+            setBlogImages(blogObjs);
         }
     }, [blogs, trendingblogs, popularBlogs, newBlogs, trendyBlogs, topBlogs, setCategories, setBlogImages]);
 
@@ -191,17 +191,21 @@ const HomePage = () => {
     const fetchPopularBlogs = async (page = 1) => {
         setPopularLoading(true);
         try {
-            // Use POST endpoint with pagination
             const { data } = await axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/latest-blogs", { page });
+            // Sort by most views (total_reads)
+            const sorted = data.blogs.sort((a, b) => (b.activity?.total_reads || 0) - (a.activity?.total_reads || 0));
             const startIndex = (page - 1) * 4;
             const endIndex = startIndex + 4;
-            const newBlogs = data.blogs.slice(startIndex, endIndex);
-            
-            // Replace the displayed blogs (slider behavior)
-            setPopularBlogs(newBlogs);
+            const newBlogs = sorted.slice(startIndex, endIndex);
+            if (newBlogs.length === 0 && page > 1) {
+                setPopularPage(1);
+                fetchPopularBlogs(1);
+            } else {
+                setPopularBlogs(newBlogs);
+            }
         } catch (err) {
             console.error("Error fetching popular blogs:", err);
-            setPopularBlogs([]); // Set empty array on error
+            setPopularBlogs([]);
         } finally {
             setPopularLoading(false);
         }
@@ -213,16 +217,11 @@ const HomePage = () => {
         try {
             // Use POST endpoint with pagination
             const { data } = await axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/latest-blogs", { page });
-            const startIndex = (page - 1) * 4;
-            const endIndex = startIndex + 4;
-            
             // Format the date for each blog before setting the state
-            const formattedBlogs = data.blogs.slice(startIndex, endIndex).map(blog => ({
+            const formattedBlogs = data.blogs.map(blog => ({
                 ...blog,
                 date: getDay(blog.publishedAt) // Ensure date is formatted
             }));
-
-            // Replace the displayed blogs (slider behavior)
             setNewBlogs(formattedBlogs);
         } catch (err) {
             console.error("Error fetching new blogs:", err);
@@ -256,21 +255,32 @@ const HomePage = () => {
     const fetchTopBlogs = async (page = 1) => {
         setTopLoading(true);
         try {
-            // Use POST endpoint with pagination
             const { data } = await axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/latest-blogs", { page });
+            // Sort by most liked + most commented
+            const sorted = data.blogs.sort((a, b) => {
+                const aScore = (a.activity?.total_likes || 0) + (a.activity?.total_comments || 0);
+                const bScore = (b.activity?.total_likes || 0) + (b.activity?.total_comments || 0);
+                return bScore - aScore;
+            });
             const startIndex = (page - 1) * 4;
             const endIndex = startIndex + 4;
-            const newBlogs = data.blogs.slice(startIndex, endIndex);
-            
-            // Replace the displayed blogs (slider behavior)
-            setTopBlogs(newBlogs);
+            const newBlogs = sorted.slice(startIndex, endIndex);
+            if (newBlogs.length === 0 && page > 1) {
+                setTopPage(1);
+                fetchTopBlogs(1);
+            } else {
+                setTopBlogs(newBlogs);
+            }
         } catch (err) {
             console.error("Error fetching top blogs:", err);
-            setTopBlogs([]); // Set empty array on error
+            setTopBlogs([]);
         } finally {
             setTopLoading(false);
         }
     };
+
+    const [maxPopularPage, setMaxPopularPage] = useState(1);
+    const [maxTopPage, setMaxTopPage] = useState(1);
 
     useEffect(() => {
         const loadData = async () => {
@@ -318,6 +328,21 @@ const HomePage = () => {
         loadData();
     }, [pageState]); // Removed liked_blogs from dependencies to prevent unnecessary re-fetches
 
+    useEffect(() => {
+        // Fetch total count for popular blogs on mount
+        axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/all-latest-blogs-count")
+            .then(({ data }) => {
+                if (data.totalDocs) {
+                    setMaxPopularPage(Math.ceil(data.totalDocs / 4));
+                    setMaxTopPage(Math.ceil(data.totalDocs / 4));
+                }
+            })
+            .catch(() => {
+                setMaxPopularPage(1);
+                setMaxTopPage(1);
+            });
+    }, []);
+
     const handleShowMoreMostViewed = () => {
         const nextPage = mostViewedPage + 1;
         setMostViewedPage(nextPage);
@@ -326,9 +351,11 @@ const HomePage = () => {
 
     // Arrow navigation handlers
     const handlePopularNext = () => {
-        const nextPage = popularPage + 1;
-        setPopularPage(nextPage);
-        fetchPopularBlogs(nextPage);
+        if (popularPage < maxPopularPage) {
+            const nextPage = popularPage + 1;
+            setPopularPage(nextPage);
+            fetchPopularBlogs(nextPage);
+        }
     };
 
     const handlePopularPrev = () => {
@@ -368,9 +395,11 @@ const HomePage = () => {
     };
 
     const handleTopNext = () => {
-        const nextPage = topPage + 1;
-        setTopPage(nextPage);
-        fetchTopBlogs(nextPage);
+        if (topPage < maxTopPage) {
+            const nextPage = topPage + 1;
+            setTopPage(nextPage);
+            fetchTopBlogs(nextPage);
+        }
     };
 
     const handleTopPrev = () => {
@@ -394,11 +423,57 @@ const HomePage = () => {
         setPageState(category);
     }
 
-    const handleLikeToggle = (updatedLikedBlogs) => {
-        setUserAuth((prev) => ({
-            ...prev,
-            liked_blogs: updatedLikedBlogs,
-        }));
+    const handleLikeToggle = (liked, blog_id) => {
+        // This function is called when a blog is liked/unliked
+        // 'liked' is a boolean indicating the new like status
+        // 'blog_id' is the ID of the blog being liked/unliked
+        setUserAuth((prev) => {
+            if (!prev) return prev;
+            
+            let liked_blogs = prev.liked_blogs || [];
+            
+            if (liked) {
+                // Add blog to liked_blogs if not already present
+                if (!liked_blogs.includes(blog_id)) {
+                    liked_blogs = [...liked_blogs, blog_id];
+                }
+            } else {
+                // Remove blog from liked_blogs
+                liked_blogs = liked_blogs.filter(id => id !== blog_id);
+            }
+            
+            return { ...prev, liked_blogs };
+        });
+    };
+
+    // Handle bookmark/unbookmark with debouncing
+    const handleBookmark = async (blog_id) => {
+        if (!userAuth?.access_token || bookmarking) return;
+        
+        const isBookmarked = userAuth?.bookmarked_blogs?.includes(blog_id);
+        setBookmarking(true);
+        
+        try {
+            const url = isBookmarked ? "/unbookmark-blog" : "/bookmark-blog";
+            await axios.post(
+                import.meta.env.VITE_SERVER_DOMAIN + url,
+                { blog_id },
+                { headers: { Authorization: `Bearer ${userAuth.access_token}` } }
+            );
+            // Fetch latest user profile and update userAuth
+            const { data: user } = await axios.post(
+                import.meta.env.VITE_SERVER_DOMAIN + "/get-profile",
+                { username: userAuth.username }
+            );
+            updateUserAuth({ ...user, access_token: userAuth.access_token }, setUserAuth);
+        } catch (err) {
+            console.error("Bookmark error:", err);
+        } finally {
+            // Add a small delay to prevent rapid clicks
+            setTimeout(() => {
+                setBookmarking(false);
+            }, 300);
+        }
     };
 
     const loadMore = pageState === "home" ? fetchLatestBlogs : fetchBlogsByCategory;
@@ -471,7 +546,7 @@ const HomePage = () => {
                             </button>
                             <button
                                 onClick={handlePopularNext}
-                                disabled={popularLoading}
+                                disabled={popularLoading || popularPage >= maxPopularPage}
                                 className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -541,7 +616,7 @@ const HomePage = () => {
                             </button>
                         </div>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                         {newLoading ? (
                             <div className="col-span-full flex justify-center py-8">
                                 <div className="flex items-center gap-2">
@@ -559,13 +634,13 @@ const HomePage = () => {
                                     className="block"
                                 >
                                     <div
-                                        className="flex bg-white rounded-xl shadow p-4 gap-4 items-center hover:shadow-lg transition-shadow duration-300 cursor-pointer"
+                                        className="flex flex-col sm:flex-row bg-white rounded-xl shadow p-4 gap-4 items-center hover:shadow-lg transition-shadow duration-300 cursor-pointer"
                                     >
                                         {/* Blog Image */}
                                         <img
                                             src={blog.banner || "/src/imgs/default.jpg"}
                                             alt={blog.title}
-                                            className="w-32 h-32 object-cover rounded-lg"
+                                            className="w-full sm:w-32 h-40 sm:h-32 object-cover rounded-lg"
                                         />
                                         {/* Blog Content */}
                                         <div className="flex-1 flex flex-col justify-between h-full">
@@ -590,17 +665,28 @@ const HomePage = () => {
                                                 {/* Bookmark Icon */}
                                                 <button 
                                                     className="ml-3"
-                                                    onClick={(e) => e.preventDefault()}
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        e.stopPropagation();
+                                                        handleBookmark(blog.blog_id || blog._id);
+                                                    }}
+                                                    disabled={bookmarking}
                                                 >
-                                                    <svg
-                                                        xmlns="http://www.w3.org/2000/svg"
-                                                        className="h-5 w-5 text-gray-400 hover:text-gray-700"
-                                                        fill="none"
-                                                        viewBox="0 0 24 24"
-                                                        stroke="currentColor"
-                                                    >
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5v14l7-7 7 7V5a2 2 0 00-2-2H7a2 2 0 00-2 2z" />
-                                                    </svg>
+                                                    {userAuth?.bookmarked_blogs?.includes(blog.blog_id || blog._id) ? (
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-yellow-500" fill="currentColor" viewBox="0 0 24 24">
+                                                            <path d="M5 5v14l7-7 7 7V5a2 2 0 00-2-2H7a2 2 0 00-2 2z" />
+                                                        </svg>
+                                                    ) : (
+                                                        <svg
+                                                            xmlns="http://www.w3.org/2000/svg"
+                                                            className="h-5 w-5 text-gray-400 hover:text-gray-700"
+                                                            fill="none"
+                                                            viewBox="0 0 24 24"
+                                                            stroke="currentColor"
+                                                        >
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5v14l7-7 7 7V5a2 2 0 00-2-2H7a2 2 0 00-2 2z" />
+                                                        </svg>
+                                                    )}
                                                 </button>
                                             </div>
                                         </div>
@@ -692,7 +778,7 @@ const HomePage = () => {
                             </button>
                             <button
                                 onClick={handleTopNext}
-                                disabled={topLoading}
+                                disabled={topLoading || topPage >= maxTopPage}
                                 className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -735,8 +821,6 @@ const HomePage = () => {
                     </div>
                 </div>
             </section>
-
-           
         </AnimationWrapper>
     );
 };

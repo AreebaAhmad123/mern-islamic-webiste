@@ -47,7 +47,7 @@
         color: rgb(54, 54, 54)
     }
     .navHover{
-        @apply hover:text-[#185d4e]
+        @apply hover:text-[#185d4e] hover:bg-gray-100 transition-colors duration-200 rounded-md;
     }
 
     .h-cover{
@@ -336,6 +336,40 @@ body[data-theme="dark"]{
   color: #a0a0a0 !important;
 }
 
+/* Comment field dark mode styles */
+[data-theme="dark"] textarea {
+  background-color: var(--color-bg) !important;
+  color: var(--color-text) !important;
+  border-color: var(--color-border) !important;
+}
+
+[data-theme="dark"] textarea::placeholder {
+  color: var(--color-text-secondary) !important;
+}
+
+[data-theme="dark"] .comment-field textarea {
+  background-color: var(--color-bg) !important;
+  color: var(--color-text) !important;
+  border-color: var(--color-border) !important;
+}
+
+[data-theme="dark"] .comment-field textarea::placeholder {
+  color: var(--color-text-secondary) !important;
+}
+
+/* Publish form dark mode styles */
+[data-theme="dark"] .publish-form textarea,
+[data-theme="dark"] .publish-form input[type="text"] {
+  background-color: var(--color-bg) !important;
+  color: var(--color-text) !important;
+  border-color: var(--color-border) !important;
+}
+
+[data-theme="dark"] .publish-form textarea::placeholder,
+[data-theme="dark"] .publish-form input[type="text"]::placeholder {
+  color: var(--color-text-secondary) !important;
+}
+
 .border-grey-100 {
     border-color: #374151 !important; /* gray-700 */
 }
@@ -403,4 +437,13 @@ body::-webkit-scrollbar-thumb:hover {
 [data-theme="dark"] .rounded-placeholder::placeholder {
   background: #33343a; /* dark gray for dark mode */
   color: #a0a0a0;
+}
+
+[data-theme="dark"] .sidebar-top-post-link:hover {
+  background-color: #000 !important;
+}
+
+[data-theme="dark"] .sidebar-tag-link:hover {
+  background-color: #000 !important;
+  color: #fff !important;
 }

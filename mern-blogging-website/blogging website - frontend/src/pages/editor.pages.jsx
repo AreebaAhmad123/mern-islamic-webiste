@@ -262,12 +262,8 @@ const Editor = () => {
         <EditorErrorBoundary>
             <EditorContext.Provider value={{ blog, setBlog, editorState, setEditorState, textEditor, setTextEditor }}>
                 <div className="editor-page">
-                    {
-                        !access_token ? <Navigate to="/login" />
-                            : loading ? <Loader />
-                                :
-                                editorState == "editor" ? <BlogEditor /> : <PublishForm />
-                    }
+                    {editorState === "editor" && blog && userAuth && userAuth.access_token && <BlogEditor />}
+                    {editorState === "publish" && blog && userAuth && userAuth.access_token && <PublishForm />}
                 </div>
             </EditorContext.Provider>
         </EditorErrorBoundary>

@@ -11,32 +11,44 @@ const NotificationCommentField = ({ _id, blog_author, index = undefined, replyin
     let { notifications, notifications: { results }, setNotifications } = notificationData;
 
   const handleComment = () => {
-  if (!comment.length) {
-    return toast.error("Write something to leave a comment....");
-  }
-
-  axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/add-comment", {
-    _id,
-    blog_author :user_id,
-    comment,
-    replying_to: replyingTo, notification_id
-  }, {
-    headers: {
-      'Authorization': `Bearer ${access_token}`
+    if (!comment.length) {
+      return toast.error("Write something to leave a comment....");
     }
-  })
-  .then(({ data }) => {
-    setReplying(false);
-    results[index].reply = {comment, _id :data._id};
-    setNotifications({
-      ...notifications,
-      results});
-    
-  })
-  .catch(err => {
-     console.log(err);
+
+    axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/add-comment", {
+      blog_id: _id,
+      blog_author: user_id,
+      comment,
+      replying_to: replyingTo
+    }, {
+      headers: {
+        'Authorization': `Bearer ${access_token}`
+      }
+    })
+    .then(({ data }) => {
+      if (data.success) {
+        setReplying(false);
+        // Update the notification with the reply
+        if (results[index]) {
+          results[index].reply = {comment, _id: data.comment._id};
+          setNotifications({
+            ...notifications,
+            results
+          });
+        }
+        setComment(''); // Clear the comment field
+        toast.success('Reply posted successfully!');
+      }
+    })
+    .catch(err => {
+      console.error('Error posting reply:', err);
+      if (err.response?.data?.error) {
+        toast.error('Error posting reply: ' + err.response.data.error);
+      } else {
+        toast.error('Failed to post reply. Please try again.');
+      }
     });
-};
+  };
 
     return (
         <>

@@ -1,4 +1,11 @@
+import { useContext } from "react";
+import { ThemeContext } from "../App";
+
 const LoadMoreDataBtn = ({ state, fetchDataFun, additionalParam }) => {
+    const { theme } = useContext(ThemeContext);
+    let btnClass = theme === "dark"
+        ? "bg-purple-600 text-white p-2 px-4 rounded-md flex items-center gap-2 font-semibold shadow hover:bg-purple-700 transition-colors duration-150"
+        : "bg-white border border-purple-600 text-purple-700 p-2 px-4 rounded-md flex items-center gap-2 font-semibold shadow hover:bg-purple-100 transition-colors duration-150";
     if (
         state &&
         typeof state.totalDocs === 'number' &&
@@ -7,8 +14,8 @@ const LoadMoreDataBtn = ({ state, fetchDataFun, additionalParam }) => {
     ) {
         return (
             <button
-                onClick={() => fetchDataFun(...(additionalParam ? [additionalParam] : []), state.page + 1)}
-                className="bg-purple-600 text-white p-2 px-4 rounded-md flex items-center gap-2 font-semibold shadow hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-400 transition-colors duration-150"
+                onClick={() => fetchDataFun({ ...(additionalParam || {}), page: (state.page || 1) + 1 })}
+                className={btnClass}
             >
                 Load More
             </button>

@@ -237,8 +237,8 @@ export const ManageBlogs = () => {
                                 <div className="flex justify-center mt-4">
                                     <LoadMoreDataBtn
                                         state={blogs}
-                                        fetchDataFun={({ page }) => getBlogs({ page, draft: false })}
-                                        additionalParam={{ page: (blogs.page || 1) + 1, draft: false }}
+                                        fetchDataFun={({ page, draft }) => getBlogs({ page, draft })}
+                                        additionalParam={{ draft: false }}
                                     />
                                 </div>
                             </>
@@ -271,8 +271,8 @@ export const ManageBlogs = () => {
                                 <div className="flex justify-center mt-4">
                                     <LoadMoreDataBtn
                                         state={drafts}
-                                        fetchDataFun={({ page }) => getBlogs({ page, draft: true })}
-                                        additionalParam={{ page: (drafts.page || 1) + 1, draft: true }}
+                                        fetchDataFun={({ page, draft }) => getBlogs({ page, draft })}
+                                        additionalParam={{ draft: true }}
                                     />
                                 </div>
                             </>

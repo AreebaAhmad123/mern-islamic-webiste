@@ -21,8 +21,17 @@ export const fetchComments = async ({ skip = 0, blog_id, setParentCommentCountFu
       return { results: [] };
     }
 
+    // Ensure each comment has the required fields
     comments.forEach(comment => {
       comment.childrenLevel = 0;
+      // Ensure commented_by has the required fields
+      if (comment.commented_by && typeof comment.commented_by === 'object') {
+        // Keep the original personal_info structure and add fallback properties
+        comment.commented_by.fullname = comment.commented_by.personal_info?.fullname || 'Unknown User';
+        comment.commented_by.username = comment.commented_by.personal_info?.username || 'unknown';
+        comment.commented_by.profile_img = comment.commented_by.personal_info?.profile_img || '/src/imgs/user profile.png';
+        comment.commented_by.role = comment.commented_by.role || 'user';
+      }
     });
 
     setParentCommentCountFun(prevVal => prevVal + comments.length);
@@ -63,13 +72,21 @@ const CommentsContainer = () => {
   } = context;
 
   const commentsArr = blog.comments?.results || [];
-  const total_parent_comments = blog.activity?.total_parent_comments || 0;
+  const validCommentsArr = Array.isArray(commentsArr)
+    ? commentsArr.filter(c => c && c._id)
+    : [];
+  const total_parent_comments = blog.activity?.total_comments || 0;
+
+  console.log("CommentsContainer - blog data:", blog);
+  console.log("CommentsContainer - comments array:", commentsArr);
+  console.log("CommentsContainer - valid comments array:", validCommentsArr);
+  console.log("CommentsContainer - total parent comments:", total_parent_comments);
 
   const loadMoreComments = async () => {
     try {
       const newCommentsArr = await fetchComments({ 
         skip: totalParentCommentsLoaded, 
-        blog_id: blog._id, 
+        blog_id: blog.blog_id || blog._id, 
         setParentCommentCountFun: setTotalParentCommentsLoaded, 
         comment_array: commentsArr 
       });
@@ -80,14 +97,14 @@ const CommentsContainer = () => {
   };
 
   return (
-    <section className="w-full mt-12">
+    <section id="comments-section" className="w-full mt-12">
       <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-gray-700">
         <span className="text-yellow-400 text-base">•</span> Comments
       </h2>
       <CommentField action="Comment" />
       <div className="flex flex-col gap-4">
-        {commentsArr && commentsArr.length ?
-          commentsArr.map((comment, i) => (
+        {validCommentsArr && validCommentsArr.length ?
+          validCommentsArr.map((comment, i) => (
             <AnimationWrapper key={i}>
               <div className="bg-gray-50 rounded-xl p-5">
                 <CommentCard 

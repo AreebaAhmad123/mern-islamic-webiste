@@ -1,9 +1,11 @@
 import { useContext, useRef, useState, useEffect } from "react";
 import { Outlet, Navigate, NavLink } from "react-router-dom";
 import { UserContext } from "../App";
+import axios from "axios";
+import { updateUserAuth } from "../common/auth";
 
 const SideNav = () => {
-  const { userAuth } = useContext(UserContext) || {};
+  const { userAuth, setUserAuth } = useContext(UserContext) || {};
   const access_token = userAuth?.access_token;
   const new_notification_available = userAuth?.new_notification_available;
 
@@ -29,10 +31,27 @@ const SideNav = () => {
     }
   }
 
+  const handleNotificationClick = () => {
+    // Immediately mark notifications as seen when clicking the link
+    if (new_notification_available && access_token) {
+      const updatedUserAuth = { ...userAuth, new_notification_available: false };
+      updateUserAuth(updatedUserAuth, setUserAuth);
+      axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/seen-notifications", {}, {
+        headers: {
+          'Authorization': `Bearer ${access_token}`
+        }
+      }).catch(err => {
+        console.log('Error marking notifications as seen:', err);
+      });
+    }
+  };
+
   useEffect(() => {
     setShowSideNav(false);
     pageStateTab.current.click();
   }, [pageState]);
+
+  const isAdmin = userAuth?.isAdmin || userAuth?.admin || userAuth?.role === 'admin';
 
   return (
     access_token === null ? <Navigate to="/signin" /> :
@@ -52,37 +71,38 @@ const SideNav = () => {
           {/* Sidebar Navigation */}
           <div className={"min-w-[200px] h-[calc(100vh-80px-60px)] md:sticky md:top-24 overflow-y-auto p-6 md:pr-0 md:border-grey md:border-r bg-white max-md:absolute max-md:top-0 max-md:left-0 max-md:w-full max-md:h-screen max-md:z-30 duration-500" +
             (showSideNav ? " max-md:translate-x-0 max-md:opacity-100 max-md:pointer-events-auto" : " max-md:-translate-x-full max-md:opacity-0 max-md:pointer-events-none")}>
-            <h1 className="text-xl text-dark-grey mb-3">Dashboard</h1>
-            <hr className="border-grey -ml-6 mb-8 mr-6" />
-
-            <NavLink to="/dashboard/blogs" onClick={(e) => setPageState(e.target.innerText)} className="sidebar-link">
-              <i className="fi fi-rr-document"></i>
-              Blogs
-            </NavLink>
-
-            <NavLink to="/dashboard/notification" onClick={(e) => setPageState(e.target.innerText)} className="sidebar-link">
-              <div className="relative">
-                <i className="fi fi-rr-bell"></i>
-                {new_notification_available ? (
-                  <span className="bg-red w-2 h-2 rounded-full absolute z-10 top-0 right-0"></span>
-                ) : ""}
-              </div>
-              Notification
-            </NavLink>
-
-            <NavLink to="/editor" onClick={(e) => setPageState(e.target.innerText)} className="sidebar-link">
-              <i className="fi fi-rr-file-edit"></i>
-              Write
-            </NavLink>
-
+            {isAdmin && (
+              <>
+                <h1 className="text-xl text-dark-grey mb-3">Dashboard</h1>
+                <hr className="border-grey -ml-6 mb-8 mr-6" />
+                <NavLink to="/dashboard/blogs" onClick={(e) => setPageState(e.target.innerText)} className="sidebar-link">
+                  <i className="fi fi-rr-document"></i>
+                  Blogs
+                </NavLink>
+                <NavLink to="/dashboard/notification" onClick={(e) => {
+                  setPageState(e.target.innerText);
+                  handleNotificationClick();
+                }} className="sidebar-link">
+                  <div className="relative">
+                    <i className="fi fi-rr-bell"></i>
+                    {new_notification_available ? (
+                      <span className="bg-red w-2 h-2 rounded-full absolute z-10 top-0 right-0"></span>
+                    ) : ""}
+                  </div>
+                  Notification
+                </NavLink>
+                <NavLink to="/editor" onClick={(e) => setPageState(e.target.innerText)} className="sidebar-link">
+                  <i className="fi fi-rr-file-edit"></i>
+                  Write
+                </NavLink>
+              </>
+            )}
             <h1 className="text-xl text-dark-grey mt-20 mb-3">Settings</h1>
             <hr className="border-grey -ml-6 mb-8 mr-6" />
-
             <NavLink to="/settings/edit-profile" onClick={(e) => setPageState(e.target.innerText)} className="sidebar-link">
               <i className="fi fi-rr-user"></i>
               Edit Profile
             </NavLink>
-
             <NavLink to="/settings/change-password" onClick={(e) => setPageState(e.target.innerText)} className="sidebar-link">
               <i className="fi fi-rr-lock"></i>
               Change Password

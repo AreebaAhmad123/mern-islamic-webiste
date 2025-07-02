@@ -70,8 +70,7 @@ const BlogInteraction = () => {
             }));
 
             axios.post(`${import.meta.env.VITE_SERVER_DOMAIN}/like-blog`, {
-                _id,
-                isLikedByUser: newLikeStatus,
+                blog_id: blogId,
             }, {
                 headers: {
                     'Authorization': `Bearer ${access_token}`
@@ -84,12 +83,12 @@ const BlogInteraction = () => {
                     let liked_blogs = prev.liked_blogs || [];
                     if (newLikeStatus) {
                         // Add blog to liked_blogs
-                        if (!liked_blogs.includes(_id)) {
-                            liked_blogs = [...liked_blogs, _id];
+                        if (!liked_blogs.includes(blogId)) {
+                            liked_blogs = [...liked_blogs, blogId];
                         }
                     } else {
                         // Remove blog from liked_blogs
-                        liked_blogs = liked_blogs.filter(id => id !== _id);
+                        liked_blogs = liked_blogs.filter(id => id !== blogId);
                     }
                     return { ...prev, liked_blogs };
                 });
@@ -132,7 +131,13 @@ const BlogInteraction = () => {
                     <p className="text-xl text-dark-grey">{totalLikes}</p>
 
                     <button 
-                    onClick={() =>setCommentsWrapper && setCommentsWrapper(preVal => !preVal)} className="w-10 h-10 rounded-full flex items-center justify-center bg-grey/80 ">
+                    onClick={() => {
+                        if (setCommentsWrapper) setCommentsWrapper(true);
+                        const el = document.getElementById('comments-section');
+                        if (el) {
+                            el.scrollIntoView({ behavior: 'smooth' });
+                        }
+                    }} className="w-10 h-10 rounded-full flex items-center justify-center bg-grey/80 ">
                         <i className="fi fi-rr-comment-dots"></i>
                     </button>
                     <p className="text-xl text-dark-grey">{total_comments}</p>

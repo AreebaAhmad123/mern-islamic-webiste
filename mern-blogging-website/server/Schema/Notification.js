@@ -3,7 +3,7 @@ import mongoose, { Schema } from "mongoose";
 const notificationSchema = mongoose.Schema({
     type: {
         type: String,
-        enum: ["like", "comment", "reply", "new_user"],
+        enum: ["like", "comment", "reply", "new_user", "newsletter"],
         required: true
     },
     blog: {
@@ -29,8 +29,11 @@ const notificationSchema = mongoose.Schema({
     },
     user: {
         type: Schema.Types.ObjectId,
-        required: true,
-        ref: 'users'
+        ref: 'users',
+        required: function() {
+            // Only require user for non-newsletter notifications
+            return this.type !== 'newsletter';
+        }
     },
     comment: {
         type: Schema.Types.ObjectId,

@@ -3,26 +3,31 @@ import axios from "axios";
 import { UserContext } from "../App";
 import { BlogContext } from "../pages/blog.page";
 import getDay from "../common/date";
+import { Toaster, toast } from "react-hot-toast";
+import userProfile from "../imgs/user profile.png";
 
 const CommentCard = ({ commentData, index, leftVal }) => {
+    console.log('CommentCard received commentData:', commentData);
+    if (!commentData || !commentData._id) return null;
+
     const [isDeleting, setIsDeleting] = useState(false);
     const { userAuth } = useContext(UserContext);
-    const { blog, setBlog } = useContext(BlogContext);
+    const { blog, setBlog, fetchBlog } = useContext(BlogContext);
 
     const { _id, comment, commented_by, commentedAt, children } = commentData;
 
-    const canDelete = userAuth && (userAuth._id === commented_by._id || userAuth.role === 'admin');
+    const canDelete = userAuth && commented_by && (userAuth._id === commented_by._id || userAuth.role === 'admin' || userAuth.personal_info?.role === 'admin');
 
     const handleDelete = async () => {
-        if (!canDelete || !blog?._id) return;
+        if (!canDelete || !blog?.blog_id) return;
         
         if (window.confirm('Are you sure you want to delete this comment?')) {
             setIsDeleting(true);
             try {
-                const { data } = await axios.delete(
+                const { data } = await axios.post(
                     import.meta.env.VITE_SERVER_DOMAIN + "/delete-comment",
+                    { comment_id: _id, blog_id: blog.blog_id || blog._id },
                     {
-                        data: { comment_id: _id, blog_id: blog._id },
                         headers: {
                             'Authorization': `Bearer ${userAuth.access_token}`,
                             'Content-Type': 'application/json'
@@ -31,20 +36,27 @@ const CommentCard = ({ commentData, index, leftVal }) => {
                 );
 
                 if (data.success) {
-                    // Update the blog state to remove the deleted comment
-                    const updatedBlog = { ...blog };
-                    if (updatedBlog.comments && updatedBlog.comments.results) {
-                        updatedBlog.comments.results = updatedBlog.comments.results.filter(
-                            (_, i) => i !== index
-                        );
+                    // Refresh the blog data to update comment count
+                    if (typeof fetchBlog === 'function') {
+                        await fetchBlog();
+                    } else {
+                        // fallback: update the blog state to remove the deleted comment
+                        const updatedBlog = { ...blog };
+                        if (updatedBlog.comments && updatedBlog.comments.results) {
+                            updatedBlog.comments.results = updatedBlog.comments.results.filter(
+                                (comment) => comment._id !== _id
+                            );
+                        }
+                        setBlog(updatedBlog);
                     }
-                    if (updatedBlog.activity) {
-                        updatedBlog.activity.total_parent_comments = Math.max(0, updatedBlog.activity.total_parent_comments - 1);
-                    }
-                    setBlog(updatedBlog);
                 }
             } catch (error) {
                 console.error('Error deleting comment:', error);
+                if (error.response?.data?.error) {
+                    toast.error('Error deleting comment: ' + error.response.data.error);
+                } else {
+                    toast.error('Failed to delete comment. Please try again.');
+                }
             } finally {
                 setIsDeleting(false);
             }
@@ -52,11 +64,13 @@ const CommentCard = ({ commentData, index, leftVal }) => {
     };
 
     return (
-        <div className="bg-white p-4 rounded-lg border hover:shadow-sm transition-shadow" style={{ marginLeft: `${leftVal * 10}px` }}>
+        <>
+            <Toaster />
+            <div className="bg-white p-4 rounded-lg border hover:shadow-sm transition-shadow" style={{ marginLeft: `${leftVal * 10}px` }}>
             <div className="flex items-start space-x-3">
                 <img 
-                    src={commented_by.profile_img || '/src/imgs/user profile.png'} 
-                    alt={commented_by.fullname}
+                    src={commented_by?.personal_info?.profile_img || commented_by?.profile_img || userProfile} 
+                    alt={commented_by?.personal_info?.fullname || commented_by?.fullname || 'User'}
                     className="w-10 h-10 rounded-full flex-shrink-0"
                 />
                 
@@ -64,10 +78,10 @@ const CommentCard = ({ commentData, index, leftVal }) => {
                     <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center space-x-2">
                             <h4 className="font-medium text-gray-800">
-                                {commented_by.fullname}
+                                {commented_by?.personal_info?.fullname || commented_by?.fullname || 'Unknown User'}
                             </h4>
                             
-                            {commented_by.role === 'admin' && (
+                            {commented_by?.role === 'admin' && (
                                 <span className="px-2 py-1 bg-purple-100 text-purple-600 text-xs rounded-full">
                                     Admin
                                 </span>
@@ -98,6 +112,7 @@ const CommentCard = ({ commentData, index, leftVal }) => {
                 </div>
             </div>
         </div>
+        </>
     );
 };
 

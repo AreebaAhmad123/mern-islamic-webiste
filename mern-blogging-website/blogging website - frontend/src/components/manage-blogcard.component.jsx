@@ -47,7 +47,7 @@ export const ManagePublishedBlogCard = ({ blog }) => {
                         <button className="pr-4 py-2 underline" onClick={() => setShowStat(prevVal => !prevVal)}>
                             Stats
                         </button>
-                        <button className="pr-4 py-2 underline text-red" onClick={(e) => deleteBlog(blog, access_token, e.target)}>Delete</button>
+                        <button className="pr-4 py-2 underline text-red-500 hover:text-red-700 font-medium" style={{color: '#ef4444'}} onClick={(e) => deleteBlog(blog, access_token, e.target)}>Delete</button>
                     </div>
                 </div>
             </div>
@@ -76,7 +76,7 @@ export const ManageDraftBlogPost = ({ blog }) => {
 
                 <div className="flex gap-6 mt-3">
                     <Link to={`/editor/${blog.blog_id || blog.id || blog_id}`} className="pr-4 py-2 underline">Edit</Link>
-                    <button className="pr-4 py-2 underline text-red" onClick={(e) => deleteBlog(blog, access_token, e.target)}>Delete</button>
+                    <button className="pr-4 py-2 underline text-red-500 hover:text-red-700 font-medium" style={{color: '#ef4444'}} onClick={(e) => deleteBlog(blog, access_token, e.target)}>Delete</button>
                 </div>
             </div>
         </div>

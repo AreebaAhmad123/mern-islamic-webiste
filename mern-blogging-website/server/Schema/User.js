@@ -53,6 +53,14 @@ const userSchema = mongoose.Schema({
         type: Boolean,
         default: false
     },
+    verified: {
+        type: Boolean,
+        default: false
+    },
+    verificationToken: {
+        type: String,
+        // Used for email verification, cleared after verification
+    },
     social_links: {
         youtube: { type: String, default: '' },
         instagram: { type: String, default: '' },

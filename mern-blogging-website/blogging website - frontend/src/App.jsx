@@ -3,6 +3,8 @@ import Navbar from "./components/navbar.component.jsx";
 import UserAuthForm from "./pages/userAuthForm.page.jsx";
 import { createContext, useEffect, useState } from "react";
 import { lookInSession } from "./common/session";
+import { initializeUserAuth } from "./common/auth";
+import "./common/axios-config"; // Initialize axios interceptors
 import Editor from "./pages/editor.pages";
 import HomePage from "./pages/home.page";
 import SearchPage from "./pages/search.page";
@@ -19,6 +21,10 @@ import ContactUsPage from "./pages/contact-us.page";
 import AboutPage from "./pages/about.page";
 import PagesPage from "./pages/pages.page";
 import CategoriesPage from "./pages/categories.page";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import VerifyUserPage from "./pages/verify-user.page.jsx";
+import VerifyNewsletterPage from "./pages/verify-newsletter.page.jsx";
 
 export const UserContext = createContext({});
 export const ThemeContext = createContext({});
@@ -32,9 +38,11 @@ const App = () => {
   const [categories, setCategories] = useState([]);
 
   useEffect(() => {
-    let userInSession = lookInSession("user");
     let themeInSession = lookInSession("theme");
-    userInSession ? setUserAuth(JSON.parse(userInSession)) : setUserAuth({ access_token: null });
+    
+    // Initialize user authentication with token validation
+    initializeUserAuth(setUserAuth);
+    
     if (themeInSession) {
       setTheme(() => {
         document.body.setAttribute("data-theme", themeInSession)
@@ -46,10 +54,15 @@ const App = () => {
     }
   }, [])
 
+  useEffect(() => {
+    console.log("App.jsx: userAuth value:", userAuth);
+  }, [userAuth]);
+
   return (
     <ThemeContext.Provider value={{ theme, setTheme }}>
       <UserContext.Provider value={{ userAuth, setUserAuth }}>
         <FooterContext.Provider value={{ blogImages, setBlogImages, categories, setCategories }}>
+          <ToastContainer position="top-right" autoClose={2000} hideProgressBar={false} newestOnTop closeOnClick pauseOnFocusLoss draggable pauseOnHover />
           <Routes>
             <Route path="/" element={<Navbar />}>
               <Route index element={<HomePage />} />
@@ -74,6 +87,8 @@ const App = () => {
               <Route path="contact" element={<ContactUsPage />} />
               <Route path="about" element={<AboutPage />} />
               <Route path="pages" element={<PagesPage />} />
+              <Route path="verify-user" element={<VerifyUserPage />} />
+              <Route path="verify-newsletter" element={<VerifyNewsletterPage />} />
               <Route path="*" element={<PageNotFound />} />
             </Route>
           </Routes>

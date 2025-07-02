@@ -19,6 +19,31 @@ const PublishForm = () => {
   const [validationErrors, setValidationErrors] = useState({});
   const isEditing = !!(blog?.blog_id || blogId);
 
+  // Helper function to normalize content structure
+  const normalizeContent = (content) => {
+    if (!content) {
+      return [{ time: Date.now(), blocks: [], version: '2.27.2' }];
+    }
+    
+    if (Array.isArray(content)) {
+      return content.map(item => ({
+        time: item?.time || Date.now(),
+        blocks: Array.isArray(item?.blocks) ? item.blocks : [],
+        version: item?.version || '2.27.2'
+      }));
+    }
+    
+    if (typeof content === 'object' && content !== null) {
+      return [{
+        time: content.time || Date.now(),
+        blocks: Array.isArray(content.blocks) ? content.blocks : [],
+        version: content.version || '2.27.2'
+      }];
+    }
+    
+    return [{ time: Date.now(), blocks: [], version: '2.27.2' }];
+  };
+
   // Initialize tags from blog data
   useEffect(() => {
     if (blog?.tags) {
@@ -100,7 +125,7 @@ const PublishForm = () => {
         title: blog.title.trim(),
         des: blog.des.trim(),
         banner: blog.banner?.trim() || "",
-        content: Array.isArray(blog.content) ? blog.content : [blog.content],
+        content: normalizeContent(blog.content),
         tags: blog.tags.map(tag => tag.trim().toLowerCase()),
         draft: false,
         id: blog.blog_id || blogId || undefined
@@ -230,19 +255,13 @@ const PublishForm = () => {
     setBlog({ ...blog, tags: newTags });
   };
 
-  // Accept both array and object for content
+  // Get content blocks from normalized content
   const getContentBlocks = (content) => {
     if (!content) return null;
     
     try {
-      if (Array.isArray(content)) {
-        // If content is an array, get blocks from the first item
-        return content[0]?.blocks || null;
-      } else if (typeof content === 'object' && content !== null) {
-        // If content is an object, get blocks directly
-        return content.blocks || null;
-      }
-      return null;
+      const normalizedContent = normalizeContent(content);
+      return normalizedContent[0]?.blocks || null;
     } catch (error) {
       console.error("Error parsing content blocks:", error);
       return null;
@@ -264,7 +283,7 @@ const PublishForm = () => {
 
   return (
     <AnimationWrapper>
-      <section className="w-full min-h-screen bg-gray-50 py-8 px-4 sm:px-6">
+      <section className="w-full min-h-screen bg-gray-50 py-8 px-4 sm:px-6 publish-form">
         <Toaster />
         <button
           className="fixed top-4 right-4 z-50 bg-red-500 text-white rounded-full w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center hover:bg-red-600 transition border-2 border-red-600"
@@ -349,14 +368,14 @@ const PublishForm = () => {
                 </div>
               </div>
               <div>
-                <label className="block text-sm sm:text-base font-medium text-gray-700 mb-1">
+                <label className="block text-sm sm:text-base font-medium text-gray-700 mb-1 ">
                   Description
                 </label>
                 <textarea
                   placeholder="Write a short description"
                   value={blog.des || ""}
                   onChange={handleDescriptionChange}
-                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 outline-none h-24 sm:h-32 resize-none text-sm sm:text-base ${
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400  outline-none h-24 sm:h-32 resize-none text-sm sm:text-base ${
                     validationErrors.description ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'
                   }`}
                   disabled={isLoading}

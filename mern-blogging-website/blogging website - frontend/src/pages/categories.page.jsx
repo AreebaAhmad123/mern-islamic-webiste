@@ -76,8 +76,7 @@ const CategoriesPage = () => {
   if (loading) return <Loader />;
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      
+    <div className="max-w-screen-2xl w-full mx-auto px-4 py-8">
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {blogs && blogs.results && blogs.results.length > 0 ? (
           blogs.results.map((blog) => (
@@ -102,7 +101,6 @@ const CategoriesPage = () => {
           </div>
         )}
       </div>
-      
       {blogs && (
         <div className="flex justify-center mt-8">
           <LoadMoreDataBtn 
