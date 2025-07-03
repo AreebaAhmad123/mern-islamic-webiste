@@ -21,14 +21,29 @@ const VerifyUserPage = () => {
     }
     axios.get(`${import.meta.env.VITE_SERVER_DOMAIN}/api/verify-user?token=${token}`)
       .then(async ({ data }) => {
-        setStatus("Email verified! Logging you in...");
-        // Try to log in the user automatically
-        // You need to know the email and password, but since you don't, prompt user to log in
-        // Instead, redirect to login with a message
-        toast.success("Email verified! Please log in.");
-        setTimeout(() => {
-          navigate("/login");
-        }, 1500);
+        console.log('Verification response:', data);
+        if (data.access_token) {
+          setStatus("Email verified! Logging you in...");
+          // Store JWT and user info for auto-login
+          updateUserAuth({
+            access_token: data.access_token,
+            ...data.user
+          }, setUserAuth);
+          console.log("updateUserAuth called with:", {
+            access_token: data.access_token,
+            ...data.user
+          });
+          toast.success("Email verified! You are now logged in.");
+          setTimeout(() => {
+            navigate("/");
+          }, 1500);
+        } else if (data.message) {
+          setStatus(data.message);
+          toast.success(data.message);
+        } else {
+          setStatus("");
+          setError("Verification failed.");
+        }
       })
       .catch((error) => {
         setStatus("");

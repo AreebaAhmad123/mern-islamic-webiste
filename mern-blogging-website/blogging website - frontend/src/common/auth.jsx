@@ -97,6 +97,7 @@ export const initializeUserAuth = async (setUserAuth) => {
 
 // Update user auth in session and context
 export const updateUserAuth = (userData, setUserAuth) => {
+    console.log("updateUserAuth (auth.jsx) called with:", userData);
     storeInSession("user", JSON.stringify(userData));
     setUserAuth(userData);
     

@@ -34,14 +34,31 @@ const UserAuthForm = ({ type }) => {
         console.log("Stored in sessionStorage:", sessionStorage.getItem("user"));
       })
       .catch((error) => {
-        const errorMsg = error?.response?.data?.error || "Login failed. Please try again.";
+        // Improved error handling for better debugging
+        let errorMsg = "Login failed. Please try again.";
+        if (error?.response?.data?.error) {
+          errorMsg = error.response.data.error;
+        } else if (error?.message) {
+          errorMsg = error.message;
+        } else if (typeof error === 'string') {
+          errorMsg = error;
+        }
         // If login failed due to unverified email, show resend option
         if (errorMsg.includes("verify your email") || errorMsg.includes("Failed to send verification email")) {
           setShowResend(true);
           setResendEmail(formData.email);
         }
-        toast.error(errorMsg);
-        console.error("Error response:", error?.response);
+        // Show a more helpful message if email is not found
+        if (errorMsg === "Email not found") {
+          toast.error("No account found with this email. Please sign up first.");
+        } else {
+          toast.error(errorMsg);
+        }
+        // Log the full error object for debugging
+        console.error("Full error object:", error);
+        if (error?.response) {
+          console.error("Error response data:", error.response.data);
+        }
       });
   };
 
@@ -139,7 +156,7 @@ const UserAuthForm = ({ type }) => {
                 <InputBox name="lastname" type="text" placeholder="Last Name" icon="fi-rr-user" />
               </>
             ) : ""}
-            <InputBox name="email" type="email" placeholder="Email" icon="fi-rr-envelope" onChange={e => setResendEmail(e.target.value)} />
+            <InputBox name="email" type="email" placeholder="Email" icon="fi-rr-envelope" autoComplete="username" onChange={e => setResendEmail(e.target.value)} />
             <InputBox name="password" type="password" placeholder="Password" icon="fi-rr-key" />
             <button className="btn-dark center w-[100%] mt-14 ml-3" type="submit">
               {type === "signup" ? "Sign Up" : "Login"}

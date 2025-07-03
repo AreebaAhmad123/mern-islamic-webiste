@@ -136,13 +136,7 @@ const Footer = ({ instagramImages, recentComments, categories }) => {
           </div>
     
         </div>
-        <div className="w-full bg-gray-300 py-2 mt-2 rounded-b-3xl px-2 sm:px-4 flex flex-col md:flex-row justify-between items-center text-xs text-gray-600 gap-2">
-              <span className="text-center w-full md:w-auto">
-                <a href="/privacy-policy" className="hover:underline">Privacy Policy</a> | <a href="/terms-and-conditions" className="hover:underline">Terms &amp; Conditions</a>
-              </span>
-              <span className="text-center w-full md:w-auto">All Copyright (C) {new Date().getFullYear()} Reserved</span>
-            </div>
-            </div>
+        </div>
         {/* New Comments & Instagram in one row on md+ */}
         <div className="flex flex-col md:flex-row gap-4 w-full">
           <div className="flex-1 w-full md:w-1/2 sm:max-w-xs bg-gray-200 rounded-3xl p-4 flex flex-col gap-2 shadow-md mb-4 md:mb-0">
@@ -160,20 +154,33 @@ const Footer = ({ instagramImages, recentComments, categories }) => {
           <div className="flex-1 w-full md:w-1/2 sm:max-w-xs flex flex-col mb-4 md:mb-0">
             <h3 className="font-semibold text-base sm:text-lg mb-3 flex items-center gap-1"><span className="text-yellow-400 text-lg">•</span> Follow On Instagram</h3>
             <div className="mt-2">
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
-                {instagramBlogs.map((blog, idx) => (
+              {/* Responsive: 2 rows max on mobile (6 images), 2 rows on sm (8 images), up to 12 on md+ */}
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 md:gap-3 justify-center items-center p-1 overflow-hidden">
+                {(window.innerWidth < 640
+                  ? instagramBlogs.slice(0, 6)
+                  : window.innerWidth < 768
+                    ? instagramBlogs.slice(0, 8)
+                    : instagramBlogs.slice(0, 12)
+                ).map((blog, idx) => (
                   blog.blog_id ? (
                     <a key={blog.blog_id} href={`/blog/${blog.blog_id}`} target="_blank" rel="noopener noreferrer">
-                      <img src={blog.banner} alt={`Instagram post ${idx + 1}`} className="w-full aspect-square object-cover rounded-md border border-gray-200" />
+                      <img src={blog.banner} alt={`Instagram post ${idx + 1}`} className="aspect-square object-cover rounded-lg border border-gray-200 shadow-sm max-w-full h-auto min-h-[60px] max-h-[100px] transition-transform duration-200 hover:scale-105 hover:shadow-lg" />
                     </a>
                   ) : (
-                    <img key={idx} src={blog.banner} alt={`Instagram post ${idx + 1}`} className="w-full aspect-square object-cover rounded-md border border-gray-200 opacity-60" />
+                    <img key={idx} src={blog.banner} alt={`Instagram post ${idx + 1}`} className="aspect-square object-cover rounded-lg border border-gray-200 shadow-sm max-w-full h-auto min-h-[60px] max-h-[100px] opacity-60" />
                   )
                 ))}
               </div>
             </div>
           </div>
         </div>
+      </div>
+      {/* Footer bar: Privacy Policy and Copyright - always last */}
+      <div className="w-full bg-gray-300 py-2 mt-2 rounded-b-3xl px-2 sm:px-4 flex flex-col md:flex-row justify-between items-center text-xs text-gray-600 gap-2">
+        <span className="text-center w-full md:w-auto order-2 md:order-1">All Copyright (C) {new Date().getFullYear()} Reserved</span>
+        <span className="text-center w-full md:w-auto order-1 md:order-2">
+          <a href="/privacy-policy" className="hover:underline">Privacy Policy</a> | <a href="/terms-and-conditions" className="hover:underline">Terms &amp; Conditions</a>
+        </span>
       </div>
     </div>
   );

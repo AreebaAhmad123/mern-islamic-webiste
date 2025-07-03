@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-const InputBox = ({ name, type, placeholder, value, id, icon, disable = false, onChange, readOnly = false }) => {
+const InputBox = ({ name, type, placeholder, value, id, icon, disable = false, onChange, readOnly = false, ...rest }) => {
     const [passwordvisible, setpasswordvisible] = useState(false);
 
     // Only set value if both value and onChange are provided (controlled)
@@ -13,6 +13,8 @@ const InputBox = ({ name, type, placeholder, value, id, icon, disable = false, o
         readOnly,
         className: "input-box",
         onChange,
+        ...(type === "password" ? { autoComplete: "current-password" } : {}),
+        ...rest,
     };
     if (value !== undefined && onChange) {
         inputProps.value = value;

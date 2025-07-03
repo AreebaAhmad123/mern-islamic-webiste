@@ -406,31 +406,28 @@ const Navbar = () => {
             </div>
           </>
         )}
-      </nav >
-
+      </nav>
       {/* Desktop Search */}
-      {
-        shouldShowSearch && (
-          <div className="search hidden lg:block md:block py-2">
-            <input
-              type="text"
-              placeholder="Search"
-              className="md:w-[400px] lg:w-[700px] sm:w-[400px] px-4 py-2 mr-auto border border-grey-100 rounded-md text-black"
-              onKeyDown={handleSearch}
-            />
-            <i className="fi fi-rr-search text-1xl bg-black text-white p-3 rounded-md ml-2"></i>
-          </div>
-        )
-      }
-
+      {shouldShowSearch && (
+        <div className="search hidden lg:block md:block py-2">
+          <input
+            type="text"
+            placeholder="Search"
+            className="md:w-[400px] lg:w-[700px] sm:w-[400px] px-4 py-2 mr-auto border border-grey-100 rounded-md text-black"
+            onKeyDown={handleSearch}
+          />
+          <i className="fi fi-rr-search text-1xl bg-black text-white p-3 rounded-md ml-2"></i>
+        </div>
+      )}
       <Outlet />
-      
-      {/* Footer */}
-      <Footer 
-        instagramImages={blogImages}
-        recentComments={recentComments}
-        categories={categories}
-      />
+      {/* Hide Footer on login and signup pages */}
+      {!(location.pathname === "/login" || location.pathname === "/signup") && (
+        <Footer
+          instagramImages={blogImages}
+          recentComments={recentComments}
+          categories={categories}
+        />
+      )}
     </>
   );
 };

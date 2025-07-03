@@ -118,22 +118,22 @@ const ContactUsPage = () => {
       )}
       <div className="max-w-6xl mx-auto">
         {/* Main Card */}
-        <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-lg p-6 flex flex-col gap-6" encType="multipart/form-data">
+        <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-lg p-4 sm:p-6 flex flex-col gap-6" encType="multipart/form-data">
           {/* Top Row: Subject, Name, Email */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm text-gray-700 mb-1">Subject</label>
-              <input name="subject" value={form.subject} onChange={handleChange} type="text" className={`w-full rounded-md border ${errors.subject ? 'border-red-400' : 'border-gray-200'} bg-grey px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400 placeholder-gray-300`} placeholder="Subject" />
+              <label className="block text-sm sm:text-base text-gray-700 mb-1">Subject</label>
+              <input name="subject" value={form.subject} onChange={handleChange} type="text" className={`w-full rounded-md border ${errors.subject ? 'border-red-400' : 'border-gray-200'} bg-grey px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400 placeholder-gray-300 text-sm sm:text-base`} placeholder="Subject" />
               {errors.subject && <div className="text-xs text-red-500 mt-1">{errors.subject}</div>}
             </div>
             <div>
-              <label className="block text-sm text-gray-700 mb-1">Name</label>
-              <input name="name" value={form.name} onChange={handleChange} type="text" className={`w-full rounded-md border ${errors.name ? 'border-red-400' : 'border-gray-200'} bg-grey px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400 placeholder-gray-300`} placeholder="Name" />
+              <label className="block text-sm sm:text-base text-gray-700 mb-1">Name</label>
+              <input name="name" value={form.name} onChange={handleChange} type="text" className={`w-full rounded-md border ${errors.name ? 'border-red-400' : 'border-gray-200'} bg-grey px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400 placeholder-gray-300 text-sm sm:text-base`} placeholder="Name" />
               {errors.name && <div className="text-xs text-red-500 mt-1">{errors.name}</div>}
             </div>
             <div>
-              <label className="block text-sm text-gray-700 mb-1">Email</label>
-              <input name="email" value={form.email} onChange={handleChange} type="email" className={`w-full rounded-md border ${errors.email ? 'border-red-400' : 'border-gray-200'} bg-grey px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400 placeholder-gray-300`} placeholder="Email" />
+              <label className="block text-sm sm:text-base text-gray-700 mb-1">Email</label>
+              <input name="email" value={form.email} onChange={handleChange} type="email" className={`w-full rounded-md border ${errors.email ? 'border-red-400' : 'border-gray-200'} bg-grey px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400 placeholder-gray-300 text-sm sm:text-base`} placeholder="Email" />
               {errors.email && <div className="text-xs text-red-500 mt-1">{errors.email}</div>}
             </div>
           </div>
@@ -142,10 +142,10 @@ const ContactUsPage = () => {
           <div className="flex flex-col md:flex-row gap-6">
             {/* Explanation Area */}
             <div className="flex-1">
-              <label className="block text-sm text-gray-700 mb-1">Explanation</label>
-              <div className="bg-gray-100 rounded-lg p-4">
+              <label className="block text-sm sm:text-base text-gray-700 mb-1">Explanation</label>
+              <div className="bg-gray-100 rounded-lg p-3 sm:p-4">
                 {/* Formatting Buttons */}
-                <div className="flex gap-2 mb-3">
+                <div className="flex flex-wrap gap-2 mb-3">
                   <button type="button" onClick={() => handleFormat('image')} className="bg-white border border-gray-200 rounded px-2 py-1 text-xs flex items-center gap-1 hover:bg-gray-50"><i className="fi fi-rs-picture"></i> Image</button>
                   <button type="button" onClick={() => handleFormat('color')} className="bg-white border border-gray-200 rounded px-2 py-1 text-xs flex items-center gap-1 hover:bg-gray-50"><i className="fi fi-rc-eye-dropper"></i> Color</button>
                   <button type="button" onClick={() => handleFormat('text')} className="bg-white border border-gray-200 rounded px-2 py-1 text-xs flex items-center gap-1 hover:bg-gray-50"><i className="fi fi-rr-text"></i> Text</button>
@@ -158,7 +158,7 @@ const ContactUsPage = () => {
                   name="explanation"
                   value={form.explanation}
                   onChange={handleChange}
-                  className={`w-full h-32 rounded-md border ${errors.explanation ? 'border-red-400' : 'border-gray-200'} p-3 bg-gray-50 focus:outline-none resize-none placeholder-gray-300`}
+                  className={`w-full h-32 sm:h-40 rounded-md border ${errors.explanation ? 'border-red-400' : 'border-gray-200'} p-3 bg-gray-50 focus:outline-none resize-none placeholder-gray-300 text-sm sm:text-base`}
                   placeholder="Type..."
                 />
                 {errors.explanation && <div className="text-xs text-red-500 mt-1">{errors.explanation}</div>}
@@ -167,8 +167,8 @@ const ContactUsPage = () => {
           </div>
 
           {/* Send Button */}
-          <div className="flex justify-end">
-            <button type="submit" disabled={loading} className="bg-yellow-400 hover:bg-yellow-500 text-white font-semibold px-6 py-2 rounded-lg flex items-center gap-2 shadow-md disabled:opacity-50">
+          <div className="flex flex-col sm:flex-row justify-end items-stretch sm:items-center gap-2">
+            <button type="submit" disabled={loading} className="bg-yellow-400 hover:bg-yellow-500 text-white font-semibold px-4 sm:px-6 py-2 rounded-lg flex items-center gap-2 shadow-md disabled:opacity-50 w-full sm:w-auto">
               <i className="fi fi-rs-paper-plane"></i> {loading ? (<span className="flex items-center"><svg className="animate-spin h-4 w-4 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>Sending...</span>) : 'Send'}
             </button>
           </div>

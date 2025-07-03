@@ -40,8 +40,11 @@ let passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,20}$/; // regex for pass
 
 // Allow CORS from Netlify frontend
 server.use(cors({
-  origin: 'https://prismatic-starship-137fe3.netlify.app',
-  credentials: true
+  origin: [
+    'https://prismatic-starship-137fe3.netlify.app',
+    'http://localhost:5173'
+  ],
+  credentials: true // if you use cookies/sessions
 }));
 
 server.use(express.json({ limit: '50mb' }));
@@ -193,6 +196,15 @@ server.post("/api/signup", async (req, res) => {
             return res.status(500).json({ error: 'Failed to save user. Please try again.' });
         }
 
+        // Create transporter for sending email
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: process.env.ADMIN_EMAIL,
+                pass: process.env.ADMIN_EMAIL_PASSWORD
+            }
+        });
+        const verifyUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/verify-user?token=${verificationToken}`;
         // Send verification email
         try {
             await transporter.sendMail({
@@ -956,7 +968,7 @@ server.post("/api/get-blog-comments", async (req, res) => {
 // Create or update blog
 server.post("/api/create-blog", verifyJWT, async (req, res) => {
     try {
-        let { title, des, banner, content, tags, draft } = req.body;
+        let { title, des, banner, content, tags, draft, id } = req.body;
         let user_id = req.user;
 
         // Validate required fields for published blogs
@@ -1984,13 +1996,57 @@ server.post('/api/subscribe-newsletter', async (req, res) => {
 server.get('/api/verify-user', async (req, res) => {
     const { token } = req.query;
     try {
-        let user = await User.findOne({ verificationToken: token });
+        let user = await User.findOne({ verificationToken: token }) || await User.findOne({ 'verified': true, 'verificationToken': { $exists: false } });
         if (!user) return res.status(400).json({ error: "Invalid or expired verification link." });
-        if (user.verified) return res.status(400).json({ error: "User already verified." });
+        if (user.verified) {
+            // Generate JWT and return user info for auto-login
+            const access_token = jwt.sign(
+                { id: user._id, admin: user.admin },
+                process.env.SECRET_ACCESS_KEY,
+                {
+                    expiresIn: JWT_EXPIRES_IN,
+                    audience: JWT_AUDIENCE,
+                    issuer: JWT_ISSUER
+                }
+            );
+            return res.status(200).json({
+                message: "User already verified. You are now logged in.",
+                access_token,
+                user: {
+                    profile_img: user.personal_info.profile_img,
+                    username: user.personal_info.username,
+                    fullname: user.personal_info.fullname,
+                    isAdmin: user.admin,
+                    bookmarked_blogs: user.bookmarked_blogs || [],
+                    liked_blogs: user.liked_blogs || []
+                }
+            });
+        }
         user.verified = true;
         user.verificationToken = undefined;
         await user.save();
-        return res.status(200).json({ message: "Email verified! You can now log in." });
+        // Generate JWT and return user info for auto-login
+        const access_token = jwt.sign(
+            { id: user._id, admin: user.admin },
+            process.env.SECRET_ACCESS_KEY,
+            {
+                expiresIn: JWT_EXPIRES_IN,
+                audience: JWT_AUDIENCE,
+                issuer: JWT_ISSUER
+            }
+        );
+        return res.status(200).json({ 
+            message: "Email verified! You are now logged in.",
+            access_token,
+            user: {
+                profile_img: user.personal_info.profile_img,
+                username: user.personal_info.username,
+                fullname: user.personal_info.fullname,
+                isAdmin: user.admin,
+                bookmarked_blogs: user.bookmarked_blogs || [],
+                liked_blogs: user.liked_blogs || []
+            }
+        });
     } catch (err) {
         return res.status(400).json({ error: "Invalid or expired verification link." });
     }

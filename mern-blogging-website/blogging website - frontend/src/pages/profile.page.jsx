@@ -342,7 +342,7 @@ const ProfilePage = () => {
                                             <div>
                                                 {/* Only Bookmarked Blogs for non-admins */}
                                                 <div label="Bookmarked Blogs">
-                                                    <h2 className="text-2xl font-semibold mb-6">Bookmarked Blogs</h2>
+                                                    <h2 className="text-lg sm:text-xl md:text-2xl font-semibold mb-6">Bookmarked Blogs</h2>
                                                     {(!bookmarkedBlogs || !Array.isArray(bookmarkedBlogs.results)) ? (
                                                         <Loader />
                                                     ) : bookmarkedBlogs.results.length === 0 ? (

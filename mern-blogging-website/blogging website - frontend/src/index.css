@@ -7,6 +7,11 @@
 @tailwind components;
 @tailwind utilities;
 
+html, body {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
 @layer components {
     * {
         @apply m-0 p-0  box-border text-base outline-purple/30 duration-100;
@@ -38,7 +43,7 @@
     }
 
     .navbar{
-        @apply z-10 sticky top-0 flex items-center justify-evenly lg:gap-40 md:gap-28 w-full px-[5vw] py-5 h-[80px]  bg-white ;
+        @apply z-10 sticky top-0 flex items-center justify-evenly lg:gap-40 md:gap-28 w-full px-[5vw] h-[80px] bg-white ;
     }
     .search{
         @apply z-10  px-[5vw] flex-auto justify-start pr-5 bg-white  ;
@@ -150,7 +155,7 @@
 }
 
 body[data-theme="dark"]{
-    background-color: var(--color-bg) !important;
+    background-color: var(--color-bg-secondary) !important;
     color: var(--color-text);
 }
 
@@ -447,3 +452,40 @@ body::-webkit-scrollbar-thumb:hover {
   background-color: #000 !important;
   color: #fff !important;
 }
+
+/* Force black placeholder for change password page */
+.change-password-page input[type="password"]::placeholder {
+  color: #a0a0a0 !important;
+  opacity: 1 !important;
+  background: none !important;
+  border-radius: 4px;
+  padding: 0.1em 0.5em;
+}
+
+[data-theme="dark"] .change-password-page input[type="password"]::-webkit-input-placeholder { color: #ff0000 !important; }
+[data-theme="dark"] .change-password-page input[type="password"]::-moz-placeholder { color: #ff0000 !important; }
+[data-theme="dark"] .change-password-page input[type="password"]:-ms-input-placeholder { color: #ff0000 !important; }
+[data-theme="dark"] .change-password-page input[type="password"]::placeholder { color: #ff0000 !important; }
+
+[data-theme="dark"] ::placeholder {
+  /* Remove global red, use default unless overridden by more specific selectors */
+  color: var(--color-text-secondary) !important;
+}
+
+/* For black background in dark mode, set placeholder to white */
+[data-theme="dark"] input.bg-black::placeholder,
+[data-theme="dark"] textarea.bg-black::placeholder {
+  color: #fff !important;
+}
+
+/* For white background in dark mode, set placeholder to black */
+[data-theme="dark"] input.bg-white::placeholder,
+[data-theme="dark"] textarea.bg-white::placeholder {
+  color: #000 !important;
+}
+
+/* Keep special-case for change-password-page if needed */
+[data-theme="dark"] .change-password-page input[type="password"]::-webkit-input-placeholder { color: #ff0000 !important; }
+[data-theme="dark"] .change-password-page input[type="password"]::-moz-placeholder { color: #ff0000 !important; }
+[data-theme="dark"] .change-password-page input[type="password"]:-ms-input-placeholder { color: #ff0000 !important; }
+[data-theme="dark"] .change-password-page input[type="password"]::placeholder { color: #ff0000 !important; }

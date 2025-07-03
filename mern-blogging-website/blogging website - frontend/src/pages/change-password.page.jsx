@@ -79,7 +79,7 @@ const ChangePassword = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 py-8">
+        <div className="change-password-page min-h-screen bg-gray-50 py-8">
             <div className="max-w-md mx-auto px-4">
                 <div className="mb-8">
                     <h1 className="text-3xl font-bold text-gray-800 mb-2">Change Password</h1>
@@ -190,14 +190,6 @@ const ChangePassword = () => {
                                 className="flex-1 px-4 py-2 bg-yellow-400 text-white rounded-lg hover:bg-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-300 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                             >
                                 {saving ? 'Changing...' : 'Change Password'}
-                            </button>
-                            
-                            <button
-                                type="button"
-                                onClick={() => navigate('/profile')}
-                                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                            >
-                                Cancel
                             </button>
                         </div>
                     </form>

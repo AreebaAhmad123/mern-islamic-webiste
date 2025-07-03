@@ -18,6 +18,11 @@ console.log("EditorJS import check:", {
   isConstructor: EditorJS && EditorJS.prototype && EditorJS.prototype.constructor === EditorJS
 });
 
+function scheduleAutoSave() {
+  // TODO: Implement auto-save logic here
+  console.log('Auto-save scheduled');
+}
+
 const BlogEditor = () => {
   const { blog, setBlog, setEditorState } = useContext(EditorContext);
   const { userAuth = {} } = useContext(UserContext);
@@ -727,8 +732,8 @@ const BlogEditor = () => {
             <button
               className="btn-light py-2 w-full sm:w-auto text-sm sm:text-base"
               onClick={handlePublishEvent}
-              disabled={!title.trim() || !des.trim() || !banner || isSaving || isAutoSaving}
-              title={!title.trim() || !des.trim() || !banner ? "Complete all required fields to publish" : isSaving || isAutoSaving ? "Please wait for save to complete" : "Publish blog"}
+              disabled={!title.trim() || !des.trim() || isSaving || isAutoSaving}
+              title={!title.trim() || !des.trim() ? "Complete all required fields to publish" : isSaving || isAutoSaving ? "Please wait for save to complete" : "Publish blog"}
             >
               Publish
             </button>

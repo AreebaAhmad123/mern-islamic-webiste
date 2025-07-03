@@ -25,14 +25,28 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import VerifyUserPage from "./pages/verify-user.page.jsx";
 import VerifyNewsletterPage from "./pages/verify-newsletter.page.jsx";
+import axios from "./common/axios-config";
 
 export const UserContext = createContext({});
 export const ThemeContext = createContext({});
 export const FooterContext = createContext({});
 const darkThemePreference = window.matchMedia("(prefers-color-scheme: dark)").matches;
 
+const getInitialUserAuth = () => {
+  const userInSession = sessionStorage.getItem("user");
+  if (userInSession) {
+    try {
+      return JSON.parse(userInSession);
+    } catch {
+      sessionStorage.removeItem("user");
+      return null;
+    }
+  }
+  return null;
+};
+
 const App = () => {
-  const [userAuth, setUserAuth] = useState({});
+  const [userAuth, setUserAuth] = useState(getInitialUserAuth);
   const [theme, setTheme] = useState(() => darkThemePreference ? "dark" : "light");
   const [blogImages, setBlogImages] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -60,6 +74,26 @@ const App = () => {
 
   useEffect(() => {
     console.log("Server Domain:", import.meta.env.VITE_SERVER_DOMAIN);
+  }, []);
+
+  // Fetch blog images for Instagram section globally
+  useEffect(() => {
+    const fetchBlogImages = async () => {
+      try {
+        const { data } = await axios.post(
+          import.meta.env.VITE_SERVER_DOMAIN + "/api/latest-blogs",
+          { page: 1 }
+        );
+        // Get up to 12 blogs with banners and blog_id
+        const blogObjs = (data.blogs || [])
+          .filter(blog => blog.banner && blog.blog_id)
+          .slice(0, 12);
+        setBlogImages(blogObjs);
+      } catch (err) {
+        setBlogImages([]);
+      }
+    };
+    fetchBlogImages();
   }, []);
 
   return (

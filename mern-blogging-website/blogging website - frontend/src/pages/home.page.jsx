@@ -101,7 +101,7 @@ const HomePage = () => {
                 state: blogs,
                 data: data.blogs,
                 page,
-                countRoute: "/api/all-latest-blogs-count",
+                countRoute: "/all-latest-blogs-count",
                 create_new_arr: page === 1,
             });
 
@@ -128,7 +128,7 @@ const HomePage = () => {
                 state: blogs,
                 data: data.blogs,
                 page,
-                countRoute: "/api/search-blogs-count",
+                countRoute: "/search-blogs-count",
                 create_new_arr: page === 1,
                 data_to_send: { tag: pageState },
             });
