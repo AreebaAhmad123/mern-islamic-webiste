@@ -94,14 +94,14 @@ const HomePage = () => {
 
     const fetchLatestBlogs = async (page = 1) => {
         try {
-            const { data } = await axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/latest-blogs", { page }, {
+            const { data } = await axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/api/latest-blogs", { page }, {
                 timeout: 10000 // 10 second timeout
             });
             const formattedData = await filterPaginationData({
                 state: blogs,
                 data: data.blogs,
                 page,
-                countRoute: "/all-latest-blogs-count",
+                countRoute: "/api/all-latest-blogs-count",
                 create_new_arr: page === 1,
             });
 
@@ -117,7 +117,7 @@ const HomePage = () => {
 
     const fetchBlogsByCategory = async (page = 1) => {
         try {
-            const { data } = await axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/search-blogs", {
+            const { data } = await axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/api/search-blogs", {
                 tag: pageState,
                 page,
             }, {
@@ -128,7 +128,7 @@ const HomePage = () => {
                 state: blogs,
                 data: data.blogs,
                 page,
-                countRoute: "/search-blogs-count",
+                countRoute: "/api/search-blogs-count",
                 create_new_arr: page === 1,
                 data_to_send: { tag: pageState },
             });
@@ -144,7 +144,7 @@ const HomePage = () => {
     };
 
     const fetchTrendingBlogs = () => {
-        axios.get(import.meta.env.VITE_SERVER_DOMAIN + "/trending-blogs", {
+        axios.get(import.meta.env.VITE_SERVER_DOMAIN + "/api/trending-blogs", {
             timeout: 10000 // 10 second timeout
         })
             .then(({ data }) => {
@@ -171,7 +171,7 @@ const HomePage = () => {
         setMostViewedLoading(true);
         try {
             // If backend supports pagination, use it. Otherwise, fetch all and paginate client-side.
-            const { data } = await axios.get(import.meta.env.VITE_SERVER_DOMAIN + "/trending-blogs");
+            const { data } = await axios.get(import.meta.env.VITE_SERVER_DOMAIN + "/api/trending-blogs");
             if (page === 1) {
                 setMostViewedBlogs(data.blogs.slice(0, MOST_VIEWED_LIMIT));
             } else {
@@ -191,7 +191,7 @@ const HomePage = () => {
     const fetchPopularBlogs = async (page = 1) => {
         setPopularLoading(true);
         try {
-            const { data } = await axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/latest-blogs", { page });
+            const { data } = await axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/api/latest-blogs", { page });
             // Sort by most views (total_reads)
             const sorted = data.blogs.sort((a, b) => (b.activity?.total_reads || 0) - (a.activity?.total_reads || 0));
             const startIndex = (page - 1) * 4;
@@ -216,7 +216,7 @@ const HomePage = () => {
         setNewLoading(true);
         try {
             // Use POST endpoint with pagination
-            const { data } = await axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/latest-blogs", { page });
+            const { data } = await axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/api/latest-blogs", { page });
             // Format the date for each blog before setting the state
             const formattedBlogs = data.blogs.map(blog => ({
                 ...blog,
@@ -236,7 +236,7 @@ const HomePage = () => {
         setTrendyLoading(true);
         try {
             // Fetch new data for each page
-            const { data } = await axios.get(import.meta.env.VITE_SERVER_DOMAIN + "/trending-blogs");
+            const { data } = await axios.get(import.meta.env.VITE_SERVER_DOMAIN + "/api/trending-blogs");
             const startIndex = (page - 1) * 4;
             const endIndex = startIndex + 4;
             const newBlogs = data.blogs.slice(startIndex, endIndex);
@@ -255,7 +255,7 @@ const HomePage = () => {
     const fetchTopBlogs = async (page = 1) => {
         setTopLoading(true);
         try {
-            const { data } = await axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/latest-blogs", { page });
+            const { data } = await axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/api/latest-blogs", { page });
             // Sort by most liked + most commented
             const sorted = data.blogs.sort((a, b) => {
                 const aScore = (a.activity?.total_likes || 0) + (a.activity?.total_comments || 0);
@@ -330,7 +330,7 @@ const HomePage = () => {
 
     useEffect(() => {
         // Fetch total count for popular blogs on mount
-        axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/all-latest-blogs-count")
+        axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/api/all-latest-blogs-count")
             .then(({ data }) => {
                 if (data.totalDocs) {
                     setMaxPopularPage(Math.ceil(data.totalDocs / 4));
@@ -454,7 +454,7 @@ const HomePage = () => {
         setBookmarking(true);
         
         try {
-            const url = isBookmarked ? "/unbookmark-blog" : "/bookmark-blog";
+            const url = isBookmarked ? "/api/unbookmark-blog" : "/api/bookmark-blog";
             await axios.post(
                 import.meta.env.VITE_SERVER_DOMAIN + url,
                 { blog_id },
@@ -462,7 +462,7 @@ const HomePage = () => {
             );
             // Fetch latest user profile and update userAuth
             const { data: user } = await axios.post(
-                import.meta.env.VITE_SERVER_DOMAIN + "/get-profile",
+                import.meta.env.VITE_SERVER_DOMAIN + "/api/get-profile",
                 { username: userAuth.username }
             );
             updateUserAuth({ ...user, access_token: userAuth.access_token }, setUserAuth);

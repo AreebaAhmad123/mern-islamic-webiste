@@ -56,7 +56,7 @@ const Footer = ({ instagramImages, recentComments, categories }) => {
     setLoading(true);
     try {
       const res = await axios.post(
-        import.meta.env.VITE_SERVER_DOMAIN + "/subscribe-newsletter",
+        import.meta.env.VITE_SERVER_DOMAIN + "/api/subscribe-newsletter",
         { email }
       );
       setNewsletterMsg(res.data.message || "Subscribed successfully!");

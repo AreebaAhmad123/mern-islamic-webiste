@@ -18,13 +18,13 @@ const CategoriesPage = () => {
       let response;
       if (categoryName) {
         // Use search-blogs endpoint for category filtering
-        response = await axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/search-blogs", {
+        response = await axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/api/search-blogs", {
           tag: categoryName,
           page
         });
       } else {
         // Use latest-blogs endpoint for all blogs
-        response = await axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/latest-blogs", { page });
+        response = await axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/api/latest-blogs", { page });
       }
 
       const { data } = response;

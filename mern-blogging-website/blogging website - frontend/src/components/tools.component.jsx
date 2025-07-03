@@ -38,7 +38,7 @@ const uploadImageByFile = async (file) => {
         }
 
         const response = await axios.post(
-            `${import.meta.env.VITE_SERVER_DOMAIN}/upload-image`,
+            `${import.meta.env.VITE_SERVER_DOMAIN}/api/upload-image`,
             { image: base64 },
             {
                 headers: {

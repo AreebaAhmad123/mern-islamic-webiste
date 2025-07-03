@@ -9,7 +9,7 @@ import NoDataMessage from "./nodata.component";
 export const fetchComments = async ({ skip = 0, blog_id, setParentCommentCountFun, comment_array = null }) => {
   try {
     console.log("Fetching comments for blog:", blog_id, "skip:", skip);
-    const { data } = await axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/get-blog-comments", { blog_id, skip });
+    const { data } = await axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/api/get-blog-comments", { blog_id, skip });
     
     console.log("Received comments data:", data);
     

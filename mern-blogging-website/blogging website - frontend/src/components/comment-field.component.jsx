@@ -21,7 +21,7 @@ const CommentField = ({ action, type = "Comment" }) => {
         
         try {
             const { data } = await axios.post(
-                import.meta.env.VITE_SERVER_DOMAIN + "/add-comment",
+                import.meta.env.VITE_SERVER_DOMAIN + "/api/add-comment",
                 {
                     blog_id: blog.blog_id || blog._id,
                     comment: comment.trim(),

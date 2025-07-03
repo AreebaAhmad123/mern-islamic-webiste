@@ -19,7 +19,7 @@ const VerifyUserPage = () => {
       setError("Invalid verification link.");
       return;
     }
-    axios.get(`${import.meta.env.VITE_SERVER_DOMAIN}/verify-user?token=${token}`)
+    axios.get(`${import.meta.env.VITE_SERVER_DOMAIN}/api/verify-user?token=${token}`)
       .then(async ({ data }) => {
         setStatus("Email verified! Logging you in...");
         // Try to log in the user automatically

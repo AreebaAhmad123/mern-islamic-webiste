@@ -36,7 +36,7 @@ const SideNav = () => {
     if (new_notification_available && access_token) {
       const updatedUserAuth = { ...userAuth, new_notification_available: false };
       updateUserAuth(updatedUserAuth, setUserAuth);
-      axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/seen-notifications", {}, {
+      axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/api/seen-notifications", {}, {
         headers: {
           'Authorization': `Bearer ${access_token}`
         }

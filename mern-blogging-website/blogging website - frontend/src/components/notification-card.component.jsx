@@ -47,7 +47,7 @@ const NotificationCard = ({ data, index, notificationState }) => {
             return;
         }
         target.setAttribute("disabled", true);
-        axios.delete(`${import.meta.env.VITE_SERVER_DOMAIN}/delete-notification/${notification_id}`, {
+        axios.delete(`${import.meta.env.VITE_SERVER_DOMAIN}/api/delete-notification/${notification_id}`, {
             headers: {
                 'Authorization': `Bearer ${access_token}`
             }

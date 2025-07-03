@@ -43,7 +43,7 @@ const ChangePassword = () => {
         }
 
         try {
-            const response = await fetch(import.meta.env.VITE_SERVER_DOMAIN + '/change-password', {
+            const response = await fetch(import.meta.env.VITE_SERVER_DOMAIN + '/api/change-password', {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',

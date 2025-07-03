@@ -7,7 +7,7 @@ export const validateToken = async (token) => {
     
     try {
         const response = await axios.post(
-            `${import.meta.env.VITE_SERVER_DOMAIN}/validate-token`,
+            `${import.meta.env.VITE_SERVER_DOMAIN}/api/validate-token`,
             {},
             {
                 headers: {
@@ -28,7 +28,7 @@ export const validateToken = async (token) => {
 export const refreshAccessToken = async (refreshToken) => {
     try {
         const response = await axios.post(
-            `${import.meta.env.VITE_SERVER_DOMAIN}/refresh-token`,
+            `${import.meta.env.VITE_SERVER_DOMAIN}/api/refresh-token`,
             { refreshToken },
             {
                 headers: {

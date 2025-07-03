@@ -16,7 +16,7 @@ const VerifyNewsletterPage = () => {
       setError("Invalid verification link.");
       return;
     }
-    axios.get(`${import.meta.env.VITE_SERVER_DOMAIN}/verify-newsletter?token=${token}`)
+    axios.get(`${import.meta.env.VITE_SERVER_DOMAIN}/api/verify-newsletter?token=${token}`)
       .then(({ data }) => {
         setStatus("Subscription verified! Thank you for subscribing.");
         toast.success("Subscription verified!");

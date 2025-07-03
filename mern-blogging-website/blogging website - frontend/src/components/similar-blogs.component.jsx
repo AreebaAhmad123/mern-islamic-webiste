@@ -22,7 +22,7 @@ const SimilarBlogs = ({ currentBlogId, tags }) => {
 
             try {
                 const { data } = await axios.post(
-                    `${import.meta.env.VITE_SERVER_DOMAIN}/search-blogs`,
+                    `${import.meta.env.VITE_SERVER_DOMAIN}/api/search-blogs`,
                     {
                         tag: tags[0],
                         limit: 20, // Fetch more blogs initially to support load more

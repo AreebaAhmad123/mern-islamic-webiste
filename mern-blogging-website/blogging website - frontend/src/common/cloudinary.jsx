@@ -27,7 +27,7 @@ export const uploadImage = async (img, access_token) => {
     const base64 = await convertToBase64(img);
     
     const response = await axios.post(
-      import.meta.env.VITE_SERVER_DOMAIN + "/upload-image", 
+      import.meta.env.VITE_SERVER_DOMAIN + "/api/upload-image", 
       { 
         image: base64,
         fileName: img.name,

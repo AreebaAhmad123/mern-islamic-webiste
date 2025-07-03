@@ -69,7 +69,7 @@ const Editor = () => {
                 console.log("Request headers:", headers);
 
                 const response = await axios.post(
-                    import.meta.env.VITE_SERVER_DOMAIN + "/get-blog",
+                    import.meta.env.VITE_SERVER_DOMAIN + "/api/get-blog",
                     {
                         blog_id,
                         draft: true,

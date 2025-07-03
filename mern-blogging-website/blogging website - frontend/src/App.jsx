@@ -58,6 +58,10 @@ const App = () => {
     console.log("App.jsx: userAuth value:", userAuth);
   }, [userAuth]);
 
+  useEffect(() => {
+    console.log("Server Domain:", import.meta.env.VITE_SERVER_DOMAIN);
+  }, []);
+
   return (
     <ThemeContext.Provider value={{ theme, setTheme }}>
       <UserContext.Provider value={{ userAuth, setUserAuth }}>

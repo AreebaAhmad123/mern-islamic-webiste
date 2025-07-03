@@ -175,7 +175,7 @@ const BlogEditor = () => {
       };
 
       const response = await axios.post(
-        `${import.meta.env.VITE_SERVER_DOMAIN}/create-blog`,
+        `${import.meta.env.VITE_SERVER_DOMAIN}/api/create-blog`,
         blogObj,
         {
           headers: {
@@ -348,7 +348,7 @@ const BlogEditor = () => {
   const testUploadService = async () => {
     try {
       console.log("Testing upload service...");
-      const response = await axios.get(`${import.meta.env.VITE_SERVER_DOMAIN}/test-upload`);
+      const response = await axios.get(`${import.meta.env.VITE_SERVER_DOMAIN}/api/test-upload`);
       console.log("Upload service test result:", response.data);
       return response.data.success;
     } catch (error) {
@@ -396,7 +396,7 @@ const BlogEditor = () => {
       console.log("Starting upload, file size:", file.size, "bytes");
 
       const response = await axios.post(
-        `${import.meta.env.VITE_SERVER_DOMAIN}/upload-image`,
+        `${import.meta.env.VITE_SERVER_DOMAIN}/api/upload-image`,
         { image: base64 },
         {
           headers: {
@@ -548,8 +548,8 @@ const BlogEditor = () => {
       // Use different endpoints for new vs existing blogs
       const isUpdate = isEditing && getBlogId();
       const url = isUpdate 
-        ? `${import.meta.env.VITE_SERVER_DOMAIN}/update-blog/${getBlogId()}`
-        : `${import.meta.env.VITE_SERVER_DOMAIN}/create-blog`;
+        ? `${import.meta.env.VITE_SERVER_DOMAIN}/api/update-blog/${getBlogId()}`
+        : `${import.meta.env.VITE_SERVER_DOMAIN}/api/create-blog`;
       const method = isUpdate ? 'put' : 'post';
       const response = await axios[method](
         url,

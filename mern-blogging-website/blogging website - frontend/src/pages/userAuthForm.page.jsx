@@ -20,9 +20,9 @@ const UserAuthForm = ({ type }) => {
   console.log("Current access_token:", access_token);
 
   const userAuththroughServer = (serverRoute, formData) => {
-    console.log("Sending request to:", import.meta.env.VITE_SERVER_DOMAIN + serverRoute);
+    console.log("Sending request to:", import.meta.env.VITE_SERVER_DOMAIN + "/api" + serverRoute);
     console.log("Form data:", formData);
-    axios.post(import.meta.env.VITE_SERVER_DOMAIN + serverRoute, formData)
+    axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/api" + serverRoute, formData)
       .then(({ data }) => {
         if (serverRoute === "/signup") {
           setInfoMsg("Signup successful! Please check your email to verify your account.");
@@ -111,7 +111,7 @@ const UserAuthForm = ({ type }) => {
       toast.error("Enter your email to resend verification.");
       return;
     }
-    axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/resend-verification", { email: resendEmail })
+    axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/api/resend-verification", { email: resendEmail })
       .then(({ data }) => {
         toast.success(data.message || "Verification email resent. Please check your inbox.");
       })

@@ -90,7 +90,7 @@ const deleteBlog = (blog, access_token, target) => {
     
     target.setAttribute("disabled", true);
 
-    axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/delete-blog", { blogId: blogIdToDelete }, {
+    axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/api/delete-blog", { blogId: blogIdToDelete }, {
         headers: {
             'Authorization': `Bearer ${access_token}`
         }

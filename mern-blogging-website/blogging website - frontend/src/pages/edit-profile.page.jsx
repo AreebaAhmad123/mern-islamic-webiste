@@ -90,7 +90,7 @@ const EditProfile = () => {
         uploadImage(updatedProfileImg, access_token)
             .then(url => {
                 if (url) {
-                    axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/update-profile-img", { url }, {
+                    axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/api/update-profile-img", { url }, {
                         headers: {
                             'Authorization': `Bearer ${access_token}`
                         }
@@ -150,7 +150,7 @@ const EditProfile = () => {
         setIsSubmitting(true);
         let loadingToast = toast.loading("Updating ...");
 
-        axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/update-profile", {
+        axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/api/update-profile", {
             firstname,
             lastname,
             fullname,
@@ -208,7 +208,7 @@ const EditProfile = () => {
 
     useEffect(() => {
         if (access_token && currentUsername) {
-            axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/get-profile", { username: currentUsername })
+            axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/api/get-profile", { username: currentUsername })
                 .then(({ data }) => {
                     setProfile(data);
                     setLoading(false);

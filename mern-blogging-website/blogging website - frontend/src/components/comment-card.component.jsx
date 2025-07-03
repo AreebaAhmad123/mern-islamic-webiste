@@ -25,7 +25,7 @@ const CommentCard = ({ commentData, index, leftVal }) => {
             setIsDeleting(true);
             try {
                 const { data } = await axios.post(
-                    import.meta.env.VITE_SERVER_DOMAIN + "/delete-comment",
+                    import.meta.env.VITE_SERVER_DOMAIN + "/api/delete-comment",
                     { comment_id: _id, blog_id: blog.blog_id || blog._id },
                     {
                         headers: {

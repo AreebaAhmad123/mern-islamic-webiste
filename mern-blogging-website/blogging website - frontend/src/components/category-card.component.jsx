@@ -9,7 +9,7 @@ const CategoryCard = ({ categoryName, onCategorySelect }) => {
     useEffect(() => {
         let isMounted = true;
         
-        axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/search-blogs", {
+        axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/api/search-blogs", {
             tag: categoryName,
             limit: 1,
             select: ["banner"] 

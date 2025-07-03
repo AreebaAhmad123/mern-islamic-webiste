@@ -8,7 +8,7 @@ const ServerStatus = ({ children }) => {
     useEffect(() => {
         const checkServer = async () => {
             try {
-                const response = await axios.get(import.meta.env.VITE_SERVER_DOMAIN + '/new-notification', {
+                const response = await axios.get(import.meta.env.VITE_SERVER_DOMAIN + '/api/new-notification', {
                     timeout: 5000,
                     headers: {
                         'Authorization': 'Bearer test'

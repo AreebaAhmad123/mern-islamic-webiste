@@ -26,7 +26,7 @@ const CategoryPage = () => {
       filter.tag = tag;
     }
     
-    axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/search-blogs", filter)
+    axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/api/search-blogs", filter)
       .then(({ data }) => {
         setBlogs(data.blogs || []);
         setLoading(false);

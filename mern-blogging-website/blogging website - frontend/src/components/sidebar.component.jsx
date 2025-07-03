@@ -28,13 +28,13 @@ const Sidebar = ({ author, tags, topPosts, blogId }) => {
     try {
       const url = isBookmarked ? "/unbookmark-blog" : "/bookmark-blog";
       await axios.post(
-        import.meta.env.VITE_SERVER_DOMAIN + url,
+        import.meta.env.VITE_SERVER_DOMAIN + "/api" + url,
         { blog_id: blogId },
         { headers: { Authorization: `Bearer ${userAuth.access_token}` } }
       );
       // Fetch latest user profile and update userAuth
       const { data: user } = await axios.post(
-        import.meta.env.VITE_SERVER_DOMAIN + "/get-profile",
+        import.meta.env.VITE_SERVER_DOMAIN + "/api/get-profile",
         { username: userAuth.username }
       );
       updateUserAuth({ ...user, access_token: userAuth.access_token }, setUserAuth);

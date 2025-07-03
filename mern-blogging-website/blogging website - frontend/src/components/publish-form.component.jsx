@@ -137,7 +137,7 @@ const PublishForm = () => {
       if (isEditing) {
         // Update existing blog (publish draft)
         response = await axios.put(
-          `${import.meta.env.VITE_SERVER_DOMAIN}/update-blog/${blog.blog_id || blogId}`,
+          `${import.meta.env.VITE_SERVER_DOMAIN}/api/update-blog/${blog.blog_id || blogId}`,
           blogData,
           {
             headers: {
@@ -150,7 +150,7 @@ const PublishForm = () => {
       } else {
         // Create new blog
         response = await axios.post(
-          `${import.meta.env.VITE_SERVER_DOMAIN}/create-blog`,
+          `${import.meta.env.VITE_SERVER_DOMAIN}/api/create-blog`,
           blogData,
           {
             headers: {

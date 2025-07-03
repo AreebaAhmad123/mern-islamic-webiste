@@ -69,7 +69,7 @@ const BlogInteraction = () => {
                 }
             }));
 
-            axios.post(`${import.meta.env.VITE_SERVER_DOMAIN}/like-blog`, {
+            axios.post(`${import.meta.env.VITE_SERVER_DOMAIN}/api/like-blog`, {
                 blog_id: blogId,
             }, {
                 headers: {

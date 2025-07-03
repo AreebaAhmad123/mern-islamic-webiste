@@ -37,7 +37,13 @@ const server = express();
 let PORT = process.env.PORT || 3000;
 let emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/; // regex for email
 let passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,20}$/; // regex for password
-server.use(cors());
+
+// Allow CORS from Netlify frontend
+server.use(cors({
+  origin: 'https://prismatic-starship-137fe3.netlify.app',
+  credentials: true
+}));
+
 server.use(express.json({ limit: '50mb' }));
 server.use(express.urlencoded({ limit: '50mb', extended: true }));
 server.use(express.static(path.join(__dirname, 'public')));
@@ -119,7 +125,7 @@ const generateUsername = async (email) => {
     return username;
 };
 
-server.post("/signup", async (req, res) => {
+server.post("/api/signup", async (req, res) => {
     try {
         const { firstname, lastname, email, password } = req.body;
         const fullname = (firstname + ' ' + lastname).trim();
@@ -207,7 +213,7 @@ server.post("/signup", async (req, res) => {
     }
 });
 
-server.post("/login", async (req, res) => {
+server.post("/api/login", async (req, res) => {
     try {
         let { email, password } = req.body;
 
@@ -243,7 +249,7 @@ server.post("/login", async (req, res) => {
 });
 
 // Token validation endpoint
-server.post("/validate-token", verifyJWT, (req, res) => {
+server.post("/api/validate-token", verifyJWT, (req, res) => {
     try {
         // If we reach here, the token is valid
         return res.status(200).json({ 
@@ -260,7 +266,7 @@ server.post("/validate-token", verifyJWT, (req, res) => {
 });
 
 // Token refresh endpoint
-server.post("/refresh-token", async (req, res) => {
+server.post("/api/refresh-token", async (req, res) => {
     try {
         const { refreshToken } = req.body;
         
@@ -302,7 +308,7 @@ server.post("/refresh-token", async (req, res) => {
     }
 });
 
-server.post("/get-profile", (req, res) => {
+server.post("/api/get-profile", (req, res) => {
     let { username } = req.body;
 
     User.findOne({ "personal_info.username": username })
@@ -320,7 +326,7 @@ server.post("/get-profile", (req, res) => {
         });
 });
 
-server.post("/update-profile-img", verifyJWT, (req, res) => {
+server.post("/api/update-profile-img", verifyJWT, (req, res) => {
     let { url } = req.body;
 
     User.findOneAndUpdate({ _id: req.user }, { "personal_info.profile_img": url })
@@ -332,7 +338,7 @@ server.post("/update-profile-img", verifyJWT, (req, res) => {
         });
 });
 
-server.post("/update-profile", verifyJWT, (req, res) => {
+server.post("/api/update-profile", verifyJWT, (req, res) => {
     let { firstname, lastname, email, username, bio, social_links } = req.body;
     let fullname = (firstname + ' ' + lastname).trim();
     let biolimit = 150;
@@ -392,7 +398,7 @@ server.post("/update-profile", verifyJWT, (req, res) => {
         });
 });
 
-server.post("/change-password", verifyJWT, (req, res) => {
+server.post("/api/change-password", verifyJWT, (req, res) => {
     console.log("Change password request received");
     console.log("User ID:", req.user);
     console.log("Request body:", req.body);
@@ -466,7 +472,7 @@ function escapeRegex(string) {
     return string.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
 }
 
-server.post("/search-blogs-count", (req, res) => {
+server.post("/api/search-blogs-count", (req, res) => {
     let { tag, author } = req.body;
 
     // Match the query from search-blogs endpoint
@@ -491,7 +497,7 @@ server.post("/search-blogs-count", (req, res) => {
         });
 });
 
-server.post("/search-blogs", (req, res) => {
+server.post("/api/search-blogs", (req, res) => {
     let { tag, author, page = 1, eleminate_blog, query } = req.body;
 
     let findQuery = { draft: false };
@@ -545,7 +551,7 @@ server.post("/search-blogs", (req, res) => {
         });
 });
 
-server.post("/all-latest-blogs-count", (req, res) => {
+server.post("/api/all-latest-blogs-count", (req, res) => {
     Blog.countDocuments({ draft: false })
         .then(count => {
             return res.status(200).json({ totalDocs: count });
@@ -555,7 +561,7 @@ server.post("/all-latest-blogs-count", (req, res) => {
         });
 });
 
-server.get("/latest-blogs", (req, res) => {
+server.get("/api/latest-blogs", (req, res) => {
     let maxLimit = 5;
 
     Blog.find({ draft: false })
@@ -571,7 +577,7 @@ server.get("/latest-blogs", (req, res) => {
         });
 });
 
-server.post("/latest-blogs", (req, res) => {
+server.post("/api/latest-blogs", (req, res) => {
     let { page = 1 } = req.body;
     let maxLimit = 12;
     let skipDocs = (page - 1) * maxLimit;
@@ -590,7 +596,7 @@ server.post("/latest-blogs", (req, res) => {
         });
 });
 
-server.post("/user-written-blogs-count", verifyJWT, (req, res) => {
+server.post("/api/user-written-blogs-count", verifyJWT, (req, res) => {
     try {
         let user_id = req.user;
         let { draft, query } = req.body;
@@ -620,7 +626,7 @@ server.post("/user-written-blogs-count", verifyJWT, (req, res) => {
     }
 });
 
-server.post("/delete-blog", verifyJWT, async (req, res) => {
+server.post("/api/delete-blog", verifyJWT, async (req, res) => {
     let user_id = req.user;
     let isAdmin = req.admin;
     let { blogId } = req.body;
@@ -671,7 +677,7 @@ server.post("/delete-blog", verifyJWT, async (req, res) => {
 });
 
 // Test endpoint to check server and Cloudinary status
-server.get("/test-upload", async (req, res) => {
+server.get("/api/test-upload", async (req, res) => {
     try {
         console.log("Testing upload service...");
         
@@ -708,7 +714,7 @@ server.get("/test-upload", async (req, res) => {
 });
 
 // Image upload endpoint using Cloudinary
-server.post("/upload-image", verifyJWT, async (req, res) => {
+server.post("/api/upload-image", verifyJWT, async (req, res) => {
     try {
         console.log("Upload request received");
         const { image } = req.body;
@@ -811,7 +817,7 @@ server.post("/upload-image", verifyJWT, async (req, res) => {
 });
 
 // Endpoint to clean up unused banner images from Cloudinary
-server.post('/cleanup-unused-banners', verifyJWT, async (req, res) => {
+server.post('/api/cleanup-unused-banners', verifyJWT, async (req, res) => {
     // Only allow admins
     if (!req.admin) {
         return res.status(403).json({ error: 'Only admins can perform this action.' });
@@ -856,7 +862,7 @@ server.post('/cleanup-unused-banners', verifyJWT, async (req, res) => {
 });
 
 // Get individual blog by blog_id
-server.post("/get-blog", async (req, res) => {
+server.post("/api/get-blog", async (req, res) => {
     try {
         let { blog_id, draft = false, mode } = req.body;
         let user_id = null;
@@ -919,7 +925,7 @@ server.post("/get-blog", async (req, res) => {
 });
 
 // Get blog comments
-server.post("/get-blog-comments", async (req, res) => {
+server.post("/api/get-blog-comments", async (req, res) => {
     try {
         let { blog_id, skip = 0 } = req.body;
 
@@ -948,7 +954,7 @@ server.post("/get-blog-comments", async (req, res) => {
 });
 
 // Create or update blog
-server.post("/create-blog", verifyJWT, async (req, res) => {
+server.post("/api/create-blog", verifyJWT, async (req, res) => {
     try {
         let { title, des, banner, content, tags, draft } = req.body;
         let user_id = req.user;
@@ -1089,7 +1095,7 @@ server.post("/create-blog", verifyJWT, async (req, res) => {
 });
 
 // Update existing blog
-server.put("/update-blog/:blogId", verifyJWT, async (req, res) => {
+server.put("/api/update-blog/:blogId", verifyJWT, async (req, res) => {
     try {
         let { title, des, banner, content, tags, draft } = req.body;
         let user_id = req.user;
@@ -1205,7 +1211,7 @@ server.put("/update-blog/:blogId", verifyJWT, async (req, res) => {
 });
 
 // Get user's written blogs
-server.post("/user-written-blogs", verifyJWT, async (req, res) => {
+server.post("/api/user-written-blogs", verifyJWT, async (req, res) => {
     try {
         let user_id = req.user;
         let { page = 1, draft = false, query = "", deleteDocCount = 0 } = req.body;
@@ -1263,7 +1269,7 @@ server.post("/user-written-blogs", verifyJWT, async (req, res) => {
 });
 
 // Get trending blogs
-server.get("/trending-blogs", async (req, res) => {
+server.get("/api/trending-blogs", async (req, res) => {
     try {
         let maxLimit = 10;
 
@@ -1281,7 +1287,7 @@ server.get("/trending-blogs", async (req, res) => {
 });
 
 // Like/Unlike blog
-server.post("/like-blog", verifyJWT, async (req, res) => {
+server.post("/api/like-blog", verifyJWT, async (req, res) => {
     try {
         let user_id = req.user;
         let { blog_id } = req.body;
@@ -1344,7 +1350,7 @@ server.post("/like-blog", verifyJWT, async (req, res) => {
 });
 
 // Bookmark/Unbookmark blog
-server.post("/bookmark-blog", verifyJWT, async (req, res) => {
+server.post("/api/bookmark-blog", verifyJWT, async (req, res) => {
     try {
         let user_id = req.user;
         let { blog_id } = req.body;
@@ -1377,7 +1383,7 @@ server.post("/bookmark-blog", verifyJWT, async (req, res) => {
     }
 });
 
-server.post("/unbookmark-blog", verifyJWT, async (req, res) => {
+server.post("/api/unbookmark-blog", verifyJWT, async (req, res) => {
     try {
         let user_id = req.user;
         let { blog_id } = req.body;
@@ -1411,7 +1417,7 @@ server.post("/unbookmark-blog", verifyJWT, async (req, res) => {
 });
 
 // Add comment to blog
-server.post("/add-comment", verifyJWT, async (req, res) => {
+server.post("/api/add-comment", verifyJWT, async (req, res) => {
     try {
         let user_id = req.user;
         let { blog_id, comment, blog_author, replying_to } = req.body;
@@ -1489,7 +1495,7 @@ server.post("/add-comment", verifyJWT, async (req, res) => {
 });
 
 // Delete comment
-server.post("/delete-comment", verifyJWT, async (req, res) => {
+server.post("/api/delete-comment", verifyJWT, async (req, res) => {
     try {
         let user_id = req.user;
         let { comment_id, blog_id } = req.body;
@@ -1613,7 +1619,7 @@ server.get("/debug/drafts", verifyJWT, async (req, res) => {
 });
 
 // Get new notification status
-server.get("/new-notification", verifyJWT, async (req, res) => {
+server.get("/api/new-notification", verifyJWT, async (req, res) => {
     try {
         let user_id = req.user;
         
@@ -1645,7 +1651,7 @@ server.get("/new-notification", verifyJWT, async (req, res) => {
 });
 
 // Get notifications
-server.post("/notifications", verifyJWT, async (req, res) => {
+server.post("/api/notifications", verifyJWT, async (req, res) => {
     try {
         let user_id = req.user;
         let { page = 1, filter = 'all', deletedDocCount = 0 } = req.body;
@@ -1686,7 +1692,7 @@ server.post("/notifications", verifyJWT, async (req, res) => {
 });
 
 // Mark notifications as seen
-server.post("/seen-notifications", verifyJWT, async (req, res) => {
+server.post("/api/seen-notifications", verifyJWT, async (req, res) => {
     try {
         let user_id = req.user;
         await Notification.updateMany(
@@ -1701,7 +1707,7 @@ server.post("/seen-notifications", verifyJWT, async (req, res) => {
 });
 
 // Get notifications count
-server.post("/all-notifications-count", verifyJWT, async (req, res) => {
+server.post("/api/all-notifications-count", verifyJWT, async (req, res) => {
     try {
         let user_id = req.user;
         let { filter = 'all' } = req.body;
@@ -1730,7 +1736,7 @@ server.post("/all-notifications-count", verifyJWT, async (req, res) => {
     }
 });
 
-server.post('/google-auth', async (req, res) => {
+server.post('/api/google-auth', async (req, res) => {
     console.log("Attempting Google Auth...");
     console.log("GOOGLE_CLIENT_ID from env:", process.env.GOOGLE_CLIENT_ID);
     try {
@@ -1796,7 +1802,7 @@ server.post('/google-auth', async (req, res) => {
 });
 
 // Trending tags endpoint
-server.get("/trending-tags", async (req, res) => {
+server.get("/api/trending-tags", async (req, res) => {
     try {
         const tags = await Blog.aggregate([
             { $unwind: "$tags" },
@@ -1811,7 +1817,7 @@ server.get("/trending-tags", async (req, res) => {
 });
 
 // Fetch multiple blogs by their IDs (for bookmarks) with pagination
-server.post("/get-blogs-by-ids", async (req, res) => {
+server.post("/api/get-blogs-by-ids", async (req, res) => {
     try {
         const { blog_ids, page = 1, limit = 5 } = req.body;
         
@@ -1851,7 +1857,7 @@ server.post("/get-blogs-by-ids", async (req, res) => {
 });
 
 // Delete a notification by ID
-server.delete("/delete-notification/:id", verifyJWT, async (req, res) => {
+server.delete("/api/delete-notification/:id", verifyJWT, async (req, res) => {
     try {
         const notificationId = req.params.id;
         const user_id = req.user;
@@ -1872,7 +1878,7 @@ server.delete("/delete-notification/:id", verifyJWT, async (req, res) => {
 });
 
 // Replace /contact endpoint to only handle form fields
-server.post('/contact', async (req, res) => {
+server.post('/api/contact', async (req, res) => {
   try {
     const { subject, name, email, explanation } = req.body;
     if (!subject || !name || !email || !explanation) {
@@ -1905,7 +1911,7 @@ server.post('/contact', async (req, res) => {
 });
 
 // Get recent comments for footer or other uses
-server.get("/recent-comments", async (req, res) => {
+server.get("/api/recent-comments", async (req, res) => {
     try {
         // Find the latest 10 comments
         const comments = await Comment.find({})
@@ -1920,7 +1926,7 @@ server.get("/recent-comments", async (req, res) => {
 });
 
 // Newsletter subscription endpoint
-server.post('/subscribe-newsletter', async (req, res) => {
+server.post('/api/subscribe-newsletter', async (req, res) => {
   try {
     const { email } = req.body;
     if (!email) {
@@ -1975,7 +1981,7 @@ server.post('/subscribe-newsletter', async (req, res) => {
 });
 
 // Email verification endpoint for users
-server.get('/verify-user', async (req, res) => {
+server.get('/api/verify-user', async (req, res) => {
     const { token } = req.query;
     try {
         let user = await User.findOne({ verificationToken: token });
@@ -1990,7 +1996,7 @@ server.get('/verify-user', async (req, res) => {
     }
 });
 
-server.post('/resend-verification', async (req, res) => {
+server.post('/api/resend-verification', async (req, res) => {
     try {
         const { email } = req.body;
         if (!email || !emailRegex.test(email)) {
@@ -2028,7 +2034,7 @@ server.post('/resend-verification', async (req, res) => {
     }
 });
 
-server.get('/verify-newsletter', async (req, res) => {
+server.get('/api/verify-newsletter', async (req, res) => {
     const { token } = req.query;
     try {
         let subscriber = await Newsletter.findOne({ verificationToken: token });
@@ -2044,7 +2050,7 @@ server.get('/verify-newsletter', async (req, res) => {
 });
 
 // Add this after other search endpoints
-server.post("/search-users", async (req, res) => {
+server.post("/api/search-users", async (req, res) => {
     try {
         const { query } = req.body;
         if (!query || typeof query !== "string" || !query.trim()) {

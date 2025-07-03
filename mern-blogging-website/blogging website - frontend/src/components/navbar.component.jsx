@@ -51,7 +51,7 @@ const Navbar = () => {
   useEffect(() => {
     if (access_token) {
       const checkNotifications = () => {
-        axios.get(`${import.meta.env.VITE_SERVER_DOMAIN}/new-notification`, {
+        axios.get(`${import.meta.env.VITE_SERVER_DOMAIN}/api/new-notification`, {
           headers: {
             'Authorization': `Bearer ${access_token}`
           }
@@ -114,7 +114,7 @@ const Navbar = () => {
     if (new_notification_available && access_token) {
       const updatedUserAuth = { ...userAuth, new_notification_available: false };
       updateUserAuth(updatedUserAuth, setUserAuth);
-      axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/seen-notifications", {}, {
+      axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/api/seen-notifications", {}, {
         headers: {
           'Authorization': `Bearer ${access_token}`
         }
@@ -129,7 +129,7 @@ const Navbar = () => {
     const fetchRecentComments = async () => {
       try {
         const { data } = await axios.get(
-          import.meta.env.VITE_SERVER_DOMAIN + "/recent-comments"
+          import.meta.env.VITE_SERVER_DOMAIN + "/api/recent-comments"
         );
         setRecentComments(data.comments || []);
       } catch (err) {

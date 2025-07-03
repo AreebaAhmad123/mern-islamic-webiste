@@ -40,7 +40,7 @@ const BlogPostCard = ({ content, author, liked, onLikeToggle }) => {
 
         try {
             const { data } = await axios.post(
-                import.meta.env.VITE_SERVER_DOMAIN + "/like-blog",
+                import.meta.env.VITE_SERVER_DOMAIN + "/api/like-blog",
                 { blog_id: id },
                 {
                     headers: {
@@ -70,13 +70,13 @@ const BlogPostCard = ({ content, author, liked, onLikeToggle }) => {
             const blog_id = id;
             const url = isBookmarked ? "/unbookmark-blog" : "/bookmark-blog";
             await axios.post(
-                import.meta.env.VITE_SERVER_DOMAIN + url,
+                import.meta.env.VITE_SERVER_DOMAIN + "/api" + url,
                 { blog_id },
                 { headers: { Authorization: `Bearer ${userAuth.access_token}` } }
             );
             // Fetch latest user profile and update userAuth
             const { data: user } = await axios.post(
-                import.meta.env.VITE_SERVER_DOMAIN + "/get-profile",
+                import.meta.env.VITE_SERVER_DOMAIN + "/api/get-profile",
                 { username: userAuth.username }
             );
             updateUserAuth({ ...user, access_token: userAuth.access_token }, setUserAuth);

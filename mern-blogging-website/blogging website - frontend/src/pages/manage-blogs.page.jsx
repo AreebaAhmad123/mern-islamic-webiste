@@ -38,7 +38,7 @@ export const ManageBlogs = () => {
             console.log(`Fetching ${draft ? 'drafts' : 'published blogs'}...`);
             
             const response = await axios.post(
-                import.meta.env.VITE_SERVER_DOMAIN + "/user-written-blogs",
+                import.meta.env.VITE_SERVER_DOMAIN + "/api/user-written-blogs",
                 {
                     page,
                     draft,
@@ -172,7 +172,7 @@ export const ManageBlogs = () => {
         try {
             console.log("Testing debug endpoint...");
             const response = await axios.get(
-                import.meta.env.VITE_SERVER_DOMAIN + "/debug/drafts",
+                import.meta.env.VITE_SERVER_DOMAIN + "/api/debug/drafts",
                 {
                     headers: {
                         'Authorization': `Bearer ${access_token}`

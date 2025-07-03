@@ -49,7 +49,7 @@ const BlogPage = () => {
             }
 
             const { data } = await axios.post(
-                import.meta.env.VITE_SERVER_DOMAIN + "/get-blog-comments",
+                import.meta.env.VITE_SERVER_DOMAIN + "/api/get-blog-comments",
                 { blog_id }
             );
 
@@ -91,7 +91,7 @@ const BlogPage = () => {
             console.log("Making request with headers:", headers);
 
             const { data: { blog, likedByUser } } = await axios.post(
-                import.meta.env.VITE_SERVER_DOMAIN + "/get-blog",
+                import.meta.env.VITE_SERVER_DOMAIN + "/api/get-blog",
                 { blog_id },
                 { headers }
             );
@@ -113,7 +113,7 @@ const BlogPage = () => {
             // Fetch similar blogs
             if (blog.tags && blog.tags.length > 0) {
                 const { data } = await axios.post(
-                    import.meta.env.VITE_SERVER_DOMAIN + "/search-blogs",
+                    import.meta.env.VITE_SERVER_DOMAIN + "/api/search-blogs",
                     {
                         tag: blog.tags[0],
                         limit: 6,
@@ -145,10 +145,10 @@ const BlogPage = () => {
         setCommentsWrapper(false);
         setTotalParentCommentsLoaded(0);
         // Only fetch top posts and trending tags here
-        axios.get(import.meta.env.VITE_SERVER_DOMAIN + "/trending-blogs")
+        axios.get(import.meta.env.VITE_SERVER_DOMAIN + "/api/trending-blogs")
           .then(res => setTopPosts(res.data.blogs))
           .catch(console.error);
-        axios.get(import.meta.env.VITE_SERVER_DOMAIN + "/trending-tags")
+        axios.get(import.meta.env.VITE_SERVER_DOMAIN + "/api/trending-tags")
           .then(res => setTrendingTags(res.data.tags.map(tagObj => tagObj._id)))
           .catch(console.error);
     }, [blog_id]);
@@ -157,7 +157,7 @@ const BlogPage = () => {
     useEffect(() => {
         const username = blog?.author?.personal_info?.username;
         if (username) {
-            axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/get-profile", { username })
+            axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/api/get-profile", { username })
                 .then(res => setAuthorInfo(res.data))
                 .catch(console.error);
         }

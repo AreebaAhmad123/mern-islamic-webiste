@@ -23,7 +23,7 @@ const Dashboard = () => {
         setLoading(true)
         setError(null)
         try {
-            const response = await fetch(import.meta.env.VITE_SERVER_DOMAIN + '/user-written-blogs', {
+            const response = await fetch(import.meta.env.VITE_SERVER_DOMAIN + '/api/user-written-blogs', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${user.token}`,
@@ -59,7 +59,7 @@ const Dashboard = () => {
 
     const handleDelete = async (blogId) => {
         try {
-            const response = await fetch(import.meta.env.VITE_SERVER_DOMAIN + '/delete-blog', {
+            const response = await fetch(import.meta.env.VITE_SERVER_DOMAIN + '/api/delete-blog', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${user.token}`,

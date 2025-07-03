@@ -85,7 +85,7 @@ const ProfilePage = () => {
     };
 
     const fetchUserProfile = () => {
-        axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/get-profile", {
+        axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/api/get-profile", {
             username: profileId
         })
             .then(({ data: user }) => {
@@ -118,7 +118,7 @@ const ProfilePage = () => {
         user_id = user_id || blogs?.user_id;
 
         try {
-            const { data: { blogs: newBlogs, total } } = await axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/search-blogs", {
+            const { data: { blogs: newBlogs, total } } = await axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/api/search-blogs", {
                 author: user_id,
                 page
             });
@@ -172,7 +172,7 @@ const ProfilePage = () => {
             });
             
             const { data: { blogs: newBookmarkedBlogs, totalDocs } } = await axios.post(
-                import.meta.env.VITE_SERVER_DOMAIN + "/get-blogs-by-ids",
+                import.meta.env.VITE_SERVER_DOMAIN + "/api/get-blogs-by-ids",
                 { 
                     blog_ids: userAuth.bookmarked_blogs,
                     page,

@@ -34,7 +34,7 @@ export const filterPaginationData = async ({
         }
         
         const { data: countData } = await axios.post(
-          import.meta.env.VITE_SERVER_DOMAIN + countRoute,
+          import.meta.env.VITE_SERVER_DOMAIN + "/api" + countRoute,
           data_to_send,
           {
             headers,

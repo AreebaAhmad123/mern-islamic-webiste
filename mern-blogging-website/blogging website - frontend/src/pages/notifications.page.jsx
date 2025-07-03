@@ -27,7 +27,7 @@ const Notifications = () => {
     let filters = isAdmin ? ['all', 'like', 'comment', 'reply'] : ['reply'];
 
     const fetchNotifications = ({ page, deletedDocCount = 0 }) => {
-        axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/notifications", {
+        axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/api/notifications", {
             page, filter, deletedDocCount
         }, {
             headers: {
@@ -40,7 +40,7 @@ const Notifications = () => {
                     setUserAuth({...userAuth, new_notification_available: false });
                 }
                 // Mark all notifications as seen
-                axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/seen-notifications", { }, {
+                axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/api/seen-notifications", { }, {
                     headers: {
                         'Authorization': `Bearer ${access_token}`
                     }
