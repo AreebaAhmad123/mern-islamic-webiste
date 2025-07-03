@@ -141,15 +141,16 @@ const UserAuthForm = ({ type }) => {
   return (
     access_token ? <Navigate to="/" /> :
       <AnimationWrapper keyValue={type}>
-        <section className="h-cover flex items-center justify-center">
+        <section className="h-cover flex items-center justify-center px-2 sm:px-0">
           <Toaster />
-          <form id="formElement" className="w-[80%] max-w-[400px]" onSubmit={handleSubmit}>
-            <h1 className="text-4xl font-gelasio capitalize text-center mb-24">
+          <form id="formElement" className="w-full max-w-[400px] bg-white rounded-lg shadow-md p-4 sm:p-8 flex flex-col" onSubmit={handleSubmit}>
+            <h1 className="text-2xl sm:text-4xl font-gelasio capitalize text-center mb-10 sm:mb-24 w-full">
               {type === "login" ? "Welcome back" : "Join us today"}
             </h1>
             {infoMsg && (
-              <div className="mb-4 text-green-700 text-center">{infoMsg}</div>
+              <div className="mb-4 text-green-700 text-center text-sm sm:text-base w-full">{infoMsg}</div>
             )}
+            <div className="w-full flex flex-col items-center">
             {type !== "login" ? (
               <>
                 <InputBox name="firstname" type="text" placeholder="First Name" icon="fi-rr-user" />
@@ -158,7 +159,8 @@ const UserAuthForm = ({ type }) => {
             ) : ""}
             <InputBox name="email" type="email" placeholder="Email" icon="fi-rr-envelope" autoComplete="username" onChange={e => setResendEmail(e.target.value)} />
             <InputBox name="password" type="password" placeholder="Password" icon="fi-rr-key" />
-            <button className="btn-dark center w-[100%] mt-14 ml-3" type="submit">
+            </div>
+            <button className="btn-dark w-full mt-8 sm:mt-14 text-base sm:text-sm py-3 sm:py-3" type="submit">
               {type === "signup" ? "Sign Up" : "Login"}
             </button>
             {showResend && (
@@ -166,28 +168,26 @@ const UserAuthForm = ({ type }) => {
                 Resend verification email
               </button>
             )}
-            <div className="relative w-full flex items-center gap-2 my-10 opacity-10 uppercase text-black font-bold">
+            <div className="relative w-full flex items-center gap-2 my-6 sm:my-10 opacity-10 uppercase text-black font-bold text-xs sm:text-base">
               <hr className="w-1/2 border-black" />
               <p>or</p>
               <hr className="w-1/2 border-black " />
             </div>
-            <button className="btn-dark flex items-center justify-center gap-4 w-[100%] center ml-3"
-            onClick={handleGoogleAuth}
-            >
+            <button className="btn-dark flex items-center justify-center gap-4 w-full text-base sm:text-sm py-3 sm:py-3" onClick={handleGoogleAuth}>
               <img src={googleIcon} className="w-5" />
               Continue with google
             </button>
             {type === "login" ? (
-              <p className="mt-6 text-dark-grey text-xl text-center">
+              <p className="mt-6 text-dark-grey text-base sm:text-xl text-center w-full">
                 Don't have an account?
-                <Link to="/signup" className="underline text-black text-xl ml-1">
+                <Link to="/signup" className="underline text-black text-base sm:text-xl ml-1">
                   Join us today
                 </Link>
               </p>
             ) : (
-              <p className="mt-6 text-dark-grey text-xl text-center">
+              <p className="mt-6 text-dark-grey text-base sm:text-xl text-center w-full">
                 Already a member?
-                <Link to="/login" className="underline text-black text-xl ml-1">
+                <Link to="/login" className="underline text-black text-base sm:text-xl ml-1">
                   Sign in here.
                 </Link>
               </p>
