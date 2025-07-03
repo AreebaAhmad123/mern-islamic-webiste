@@ -127,8 +127,7 @@ const PublishForm = () => {
         banner: blog.banner?.trim() || "",
         content: normalizeContent(blog.content),
         tags: blog.tags.map(tag => tag.trim().toLowerCase()),
-        draft: false,
-        id: blog.blog_id || blogId || undefined
+        draft: false
       };
       
       console.log("Prepared blog data for publishing:", blogData);
